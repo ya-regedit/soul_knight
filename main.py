@@ -2,6 +2,7 @@ import os
 import sys
 
 import pygame
+import pytmx
 
 pygame.init()
 
@@ -23,7 +24,7 @@ def load_image(name, colorkey=None):
     return image
 
 
-class Board:
+class Field:
     def __init__(self, width, height):
         self.width = width
         self.height = height
@@ -54,17 +55,60 @@ class Board:
             return None
         return x // self.cell_size * self.cell_size, y // self.cell_size * self.cell_size
 
+    def get_cell(self, pos):
+        x, y = pos
+        column = (x - self.left) // self.cell_size
+        row = (y - self.top) // self.cell_size
+        if 0 <= row < self.height and 0 <= column < self.width:
+            return row, column
+        return None
+
     def get_rect(self, pos):
         if not 0 <= pos[0] < self.width or not 0 <= pos[1] < self.height:
             return None
         return self.left + self.cell_size * pos[0], self.top + self.cell_size * pos[1]
 
 
-class Enemy(pygame.sprite.Sprite):
-    def __init__(self, pos: tuple, hp, image: pygame.image, board: Board):
-        super(Enemy, self).__init__(enemies)
+class Knight(pygame.sprite.Sprite):
+    def __init__(self, pos: tuple, hp,
+                 image: pygame.image,
+                 board: Field):
+        super(Knight, self).__init__(all_sprites)
+        self.v = 10
         self.rect = image.get_rect()
-        self.rect.x, self.rect.y = board.get_left_top_pixel_of_cell(pos)
+        self.pos = pos
+        self.next_pos = pos
+        self.hp = hp
+        self.effect = None
+        self.effect_end = 0
+        self.image = image
+        self.board = board
+
+    def update(self, ev):
+        keys = pygame.key.get_pressed()
+        dx, dy = 0, 0
+        if keys[pygame.K_a]:
+            dx = -self.v
+        if keys[pygame.K_d]:
+            dx = self.v
+        if keys[pygame.K_w]:
+            dy = -self.v
+        if keys[pygame.K_d]:
+            dy = self.v
+        self.next_pos = self.pos[0] + dx, self.pos[1] + dy
+        if self.is_free():
+            self.rect = self.rect.move(dx, dy)
+
+    def is_free(self):  # метод, который будет проверять клетку в которую мы пытаемся пойти,
+        # если там препятствие - вернет False, иначе True
+        pass
+
+
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, pos: tuple, hp, image: pygame.image, field: Field):
+        super(Enemy, self).__init__(all_sprites, enemies)
+        self.rect = image.get_rect()
+        self.rect.x, self.rect.y = field.get_left_top_pixel_of_cell(pos)
         self.pos = pos
         self.hp = hp
         self.next_shot = 0
@@ -72,9 +116,9 @@ class Enemy(pygame.sprite.Sprite):
         self.effect = None
         self.effect_end = 0
         self.image = image
-        self.board = board
+        self.board = field
 
-    def move(self):
+    def move(self):  # можно в update, наверное, засунуть, ведь есть метод встроенный self.rect.move(x, y)
         pass
 
     def shoot(self):
@@ -95,8 +139,8 @@ class Enemy(pygame.sprite.Sprite):
 
 
 class EnemyShotguner(Enemy):
-    def __init__(self, pos: tuple, hp, image, board, gun):
-        super(EnemyShotguner, self).__init__(pos, hp, image, board)
+    def __init__(self, pos: tuple, hp, image, field, gun):
+        super(EnemyShotguner, self).__init__(pos, hp, image, field)
         self.gun = gun
 
     def calc_move(self):
@@ -104,26 +148,40 @@ class EnemyShotguner(Enemy):
 
 
 class EnemyRifler(Enemy):
-    def __init__(self, pos: tuple, hp, image, board, gun):
-        super(EnemyRifler, self).__init__(pos, hp, image, board)
+    def __init__(self, pos: tuple, hp, image, field, gun):
+        super(EnemyRifler, self).__init__(pos, hp, image, field)
         self.gun = gun
 
 
 class Level:
-    def __init__(self, map_path, enemies_path):
-        self.map = self.load_map(map_path)
+    def __init__(self, map_path, enemies_path, free_cells: list):
+        self.map = pytmx.load_pygame(map_path)
+        self.width = self.map.width
+        self.height = self.map.height
+        self.tile_size = self.map.tilewidth
         self.enemies = enemies_path
-
-    def load_map(self, map_path):
-        pass
+        self.free_cells = free_cells
 
     def spawn_enemies(self, enemies):
         pass
 
+    def render(self):
+        for x in range(self.width):
+            for y in range(self.height):
+                image = self.map.get_tile_image(x, y, 0)
+                screen.blit(image, (x * self.tile_size, y * self.tile_size))
+
 
 class ModeWithLevels:
-    def __init__(self):
+    def __init__(self, field: Field, knight: Knight):
+        self.field = field
+        self.knight = knight
         self.levels = [[None] * 15]
+        self.current_level = 0  # будет зависеть от нажатой кнопки с номером уровня
+
+    def render(self):
+        self.field.render(screen)
+        self.levels[self.current_level].render()
 
 
 class HardcoreMode:
@@ -131,14 +189,24 @@ class HardcoreMode:
 
 
 if __name__ == '__main__':
-    size = w, h = 600, 600
+    size = w, h = 1050, 950
     screen = pygame.display.set_mode(size)
     pygame.display.set_caption('Start')
     clock = pygame.time.Clock()
     running = True
     fps = 100
     ticks = 0
+
+    all_sprites = pygame.sprite.Group()
     enemies = pygame.sprite.Group()  # это пока будет тут, потом пойдет в класс режима игры
+
+    field_main = Field(10, 10)
+    knight_main = Knight((0, 0), 100, load_image('knight.png'), field_main)
+
+    level_mode = ModeWithLevels(field_main,
+                                knight_main)  # в дальнейшем это будет вызываться при
+    # нажатии на экране кнопки "Режим уровней"
+    level_mode.levels = [Level('maps/test_level.tmx', 'enemies/enemies1', [0, 1, 2])]
 
     while running:
         for event in pygame.event.get():
@@ -146,8 +214,9 @@ if __name__ == '__main__':
                 running = False
         ticks += 1
         pygame.display.update()
-        screen.fill('black')
-        enemies.update(ticks)
-        enemies.draw(screen)
+        level_mode.render()
+
+        # enemies.update(ticks)
+        # enemies.draw(screen)
         clock.tick(fps)
     pygame.quit()
