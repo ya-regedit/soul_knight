@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="35" height="35" tilewidth="30" tileheight="30" infinite="0" nextlayerid="2" nextobjectid="1">
+ <tileset firstgid="1" source="Ледяной уровень пол.tsx"/>
+ <layer id="1" name="Слой тайлов 1" width="35" height="35">
+  <data encoding="base64" compression="zlib">
+   eJzFl0mOhEAMBBHdEhzg/9+dPoylUExm0bc5lNhcLi/ptDm3bTs+6/zH6/VZt+6P3+uFd/tnvfSOV+v293blvjnnxHkH7mnDyPLb3PsM6uJ53ntL9xn8ctyo65Le1f496PB+2+282W/6/Ib8G/sps4qR4+GcUdfEinLEzF10WWZ8SVgdOa+xZfa2/N7S4RinmF/FFuJ11ol3jF3DPm1M+EwYTnhJtXBDN+Pwrd/pbNv5LV72oIf2plpand3k/L75O+tbXrTfx/a3FtIZjIvxSB3f8GTi3tFBDljho8X2CROJW27JEMfjr/Oe+MzxarlM+5qNqVckvLr3ND7ct2wD7W25bj0i9SE+06/Gh6kXkBOd+5d0kVMazhiPxIfJjsk7ewT5vWHIuUw9kfF4SV/jHfbxhBXj23jw+YzHoX2tjianyeanPJCDvHcPe+1HmvPOLcd/fFrVasL0a/uL59aDExe2HsDcreY36zCHJl4dX9KckXynjHnfmGk9IT23+ZMYW/GU62bXSvn1vOR6PYIOY938zd7s/4eWg1Uf9bnkHvJxmksHL8REirnzwRnDdrLPMeetxzGmrf+1a+oFaXYxRlpMUs+xTLOF9c33U2erfmcdd5HzbOjYWwf9av8Nzb6EtfQP5NmTXNvmnzYfJJ5wXK8HWfecJpvw1uYXzu2sEfvqOeUJL6wXf+es91QTrr+E/af5mf6lPuFZ1Wen/5DGyY3fyY+uT+Mo1YIx2PoCcXk+rNQf0gzlWiD+Grezt6R1ayV+Gpt+ALSmIyA=
+  </data>
+ </layer>
+</map>
