@@ -30,7 +30,7 @@ class Board:
         self.board = [[0] * width for _ in range(height)]
         self.left = 10
         self.top = 10
-        self.cell_size = 30
+        self.cell_size = 10
 
     def set_view(self, left, top, cell_size):
         self.left = left
@@ -45,14 +45,14 @@ class Board:
                                    self.cell_size, self.cell_size)
                 pygame.draw.rect(surf, "white", rect, 1)
 
-    def get_0_0_pixel_of_cell(self, pixel_pos):
+    def get_left_top_pixel_of_cell(self, pixel_pos):
         x, y = pixel_pos
         x -= self.left
         y -= self.top
         if x not in range(0, self.width * self.cell_size) \
                 or y not in range(0, self.height * self.cell_size):
             return None
-        return x // self.cell_size, y // self.cell_size
+        return x // self.cell_size * self.cell_size, y // self.cell_size * self.cell_size
 
     def get_rect(self, pos):
         if not 0 <= pos[0] < self.width or not 0 <= pos[1] < self.height:
@@ -64,7 +64,7 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self, pos: tuple, hp, image: pygame.image, board: Board):
         super(Enemy, self).__init__(enemies)
         self.rect = image.get_rect()
-        self.rect.x, self.rect.y = board.get_0_0_pixel_of_cell(pos)
+        self.rect.x, self.rect.y = board.get_left_top_pixel_of_cell(pos)
         self.pos = pos
         self.hp = hp
         self.next_shot = 0
@@ -80,10 +80,10 @@ class Enemy(pygame.sprite.Sprite):
     def shoot(self):
         pass
 
-    def update(self, tick):
-        if self.effect_end > tick:
+    def update(self, n_ticks):
+        if n_ticks > self.effect_end:
             self.effect = None
-        if self.next_shot > tick:
+        if n_ticks > self.next_shot:
             self.shoot()
 
     def apply_effect(self, effect, time):
@@ -95,6 +95,10 @@ class Enemy(pygame.sprite.Sprite):
 
 
 class EnemyShotguner(Enemy):
+    def __init__(self, pos: tuple, hp, image, board, gun):
+        super(EnemyShotguner, self).__init__(pos, hp, image, board)
+        self.gun = gun
+
     def calc_move(self):
         pass
 
@@ -134,16 +138,16 @@ if __name__ == '__main__':
     running = True
     fps = 100
     ticks = 0
-    enemies = pygame.sprite.Group() # это пока будет тут, потом пойдет в класс режима игры
-    # EnemyRifler((0,0), hp, load_image(''), enemies)
+    enemies = pygame.sprite.Group()  # это пока будет тут, потом пойдет в класс режима игры
+
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
         ticks += 1
         pygame.display.update()
-        screen.fill('white')
-        enemies.draw(screen)
+        screen.fill('black')
         enemies.update(ticks)
+        enemies.draw(screen)
         clock.tick(fps)
     pygame.quit()
