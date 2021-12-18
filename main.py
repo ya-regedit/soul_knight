@@ -74,7 +74,7 @@ class Knight(pygame.sprite.Sprite):
                  image: pygame.image,
                  board: Field):
         super(Knight, self).__init__(all_sprites)
-        self.v = 10
+        self.v = 1
         self.rect = image.get_rect()
         self.pos = pos
         self.next_pos = pos
@@ -83,25 +83,36 @@ class Knight(pygame.sprite.Sprite):
         self.effect_end = 0
         self.image = image
         self.board = board
+        self.dx, self.dy = 0, 0
 
     def update(self, ev):
-        keys = pygame.key.get_pressed()
-        dx, dy = 0, 0
-        if keys[pygame.K_a]:
-            dx = -self.v
-        if keys[pygame.K_d]:
-            dx = self.v
-        if keys[pygame.K_w]:
-            dy = -self.v
-        if keys[pygame.K_d]:
-            dy = self.v
-        self.next_pos = self.pos[0] + dx, self.pos[1] + dy
+        if ev.type == pygame.KEYDOWN:
+            if ev.key == pygame.K_LEFT:
+                self.dx = -self.v
+            elif ev.key == pygame.K_RIGHT:
+                self.dx = self.v
+            elif ev.key == pygame.K_UP:
+                self.dy = -self.v
+            elif ev.key == pygame.K_DOWN:
+                self.dy = self.v
+        if ev.type == pygame.KEYUP:
+            if ev.key == pygame.K_LEFT:
+                self.dx = 0
+            elif ev.key == pygame.K_RIGHT:
+                self.dx = 0
+            elif ev.key == pygame.K_UP:
+                self.dy = 0
+            elif ev.key == pygame.K_DOWN:
+                self.dy = 0
+
+    def move(self):
+        self.next_pos = self.pos[0] + self.dx, self.pos[1] + self.dy
         if self.is_free():
-            self.rect = self.rect.move(dx, dy)
+            self.rect = self.rect.move(self.dx, self.dy)
 
     def is_free(self):  # метод, который будет проверять клетку в которую мы пытаемся пойти,
         # если там препятствие - вернет False, иначе True
-        pass
+        return True
 
 
 class Enemy(pygame.sprite.Sprite):
@@ -209,12 +220,16 @@ if __name__ == '__main__':
     level_mode.levels = [Level('maps/test_level.tmx', 'enemies/enemies1', [0, 1, 2])]
 
     while running:
-        for event in pygame.event.get():
+        events = pygame.event.get()
+        for event in events:
             if event.type == pygame.QUIT:
                 running = False
+            knight_main.update(event)
+        knight_main.move()
         ticks += 1
         pygame.display.update()
         level_mode.render()
+        all_sprites.draw(screen)
 
         # enemies.update(ticks)
         # enemies.draw(screen)
