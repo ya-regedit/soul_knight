@@ -60,11 +60,11 @@ class Knight(pygame.sprite.Sprite):
         self.image = self.normal_frames[self.cur_frame]
 
     def cut_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(self.pos[0], self.pos[1], sheet.get_width() // columns,
-                                sheet.get_height() // rows)
+        self.rect = pygame.Rect(self.pos[0], self.pos[1], sheet.get_width() // columns - 5,
+                                sheet.get_height() // rows - 5)
         for j in range(rows):
             for i in range(columns):
-                frame_location = (self.rect.w * i, self.rect.h * j)
+                frame_location = ((self.rect.w + 5) * i, (self.rect.h + 5) * j)
                 self.normal_frames.append(sheet.subsurface(pygame.Rect(
                     frame_location, self.rect.size)))
 
@@ -75,26 +75,22 @@ class Knight(pygame.sprite.Sprite):
     def update(self, ev):
         if ev.type == pygame.KEYDOWN:
             if ev.key == pygame.K_LEFT:
-                pygame.key.set_repeat(5)
-                self.dx = -self.v
+                self.dx -= self.v
             elif ev.key == pygame.K_RIGHT:
-                pygame.key.set_repeat(5)
-                self.dx = self.v
+                self.dx += self.v
             elif ev.key == pygame.K_UP:
-                pygame.key.set_repeat(5)
-                self.dy = -self.v
+                self.dy -= self.v
             elif ev.key == pygame.K_DOWN:
-                pygame.key.set_repeat(5)
-                self.dy = self.v
+                self.dy += self.v
         if ev.type == pygame.KEYUP:
             if ev.key == pygame.K_LEFT:
-                self.dx = 0
-            if ev.key == pygame.K_RIGHT:
-                self.dx = 0
-            if ev.key == pygame.K_UP:
-                self.dy = 0
-            if ev.key == pygame.K_DOWN:
-                self.dy = 0
+                self.dx += self.v
+            elif ev.key == pygame.K_RIGHT:
+                self.dx -= self.v
+            elif ev.key == pygame.K_UP:
+                self.dy += self.v
+            elif ev.key == pygame.K_DOWN:
+                self.dy -= self.v
 
     def move(self):
         self.next_pos = self.pos[0] + self.dx, self.pos[1] + self.dy
@@ -104,12 +100,28 @@ class Knight(pygame.sprite.Sprite):
 
     def is_free(self, pos):  # метод, который будет проверять клетку в которую мы пытаемся пойти,
         # если там препятствие - вернет False, иначе True
-        pos = level_mode.levels[level_mode.current_level].get_cell(pos)
-        if pos:
-            if level_mode.levels[level_mode.current_level].get_tile_id(pos) in \
+        pos1 = level_mode.levels[level_mode.current_level].get_cell(pos)
+        pos2 = level_mode.levels[level_mode.current_level].get_cell((pos[0] + self.rect.w, pos[1] + self.rect.h))
+        pos3 = level_mode.levels[level_mode.current_level].get_cell((pos[0], pos[1] + self.rect.h))
+        pos4 = level_mode.levels[level_mode.current_level].get_cell((pos[0] + self.rect.w, pos[1]))
+        if pos1:
+            if level_mode.levels[level_mode.current_level].get_tile_id(pos1) in \
+                    level_mode.levels[level_mode.current_level].not_free_tiles:
+                return False
+        if pos2:
+            if level_mode.levels[level_mode.current_level].get_tile_id(pos2) in \
+                    level_mode.levels[level_mode.current_level].not_free_tiles:
+                return False
+        if pos3:
+            if level_mode.levels[level_mode.current_level].get_tile_id(pos3) in \
+                    level_mode.levels[level_mode.current_level].not_free_tiles:
+                return False
+        if pos4:
+            if level_mode.levels[level_mode.current_level].get_tile_id(pos4) in \
                     level_mode.levels[level_mode.current_level].not_free_tiles:
                 return False
             return True
+        return False
 
     def do_animate(self):
         global animation_frequency
