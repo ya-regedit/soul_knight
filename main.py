@@ -93,13 +93,16 @@ class Knight(pygame.sprite.Sprite):
                 self.dy -= self.v
 
     def move(self):
-        if self.is_free():
-            self.rect = self.rect.move(self.dx, self.dy)
-            self.pos = self.next_pos
+        self.next_pos = self.pos[0] + self.dx, self.pos[1] + self.dy
+        if self.is_free(self.dx, 0):
+            self.rect = self.rect.move(self.dx, 0)
+        if self.is_free(0, self.dy):
+            self.rect = self.rect.move(0, self.dy)
+        self.pos = self.next_pos
 
-    def is_free(self):  # метод, который будет проверять клетку в которую мы пытаемся пойти,
+    def is_free(self, dx, dy):  # метод, который будет проверять клетку в которую мы пытаемся пойти,
         # если там препятствие - вернет False, иначе True
-        newrect = self.rect.move(self.dx, self.dy)
+        newrect = self.rect.move(dx, dy)
         if newrect.collidelist(level_mode.levels[level_mode.current_level].not_free_rects) != -1:
             return False
         return True
@@ -240,7 +243,7 @@ class HardcoreMode:
 
 
 if __name__ == '__main__':
-    size = w, h = 1230, 960
+    size = w, h = 2560, 1440
     screen = pygame.display.set_mode(size)
     pygame.display.set_caption('Start')
     clock = pygame.time.Clock()
