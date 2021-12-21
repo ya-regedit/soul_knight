@@ -93,35 +93,16 @@ class Knight(pygame.sprite.Sprite):
                 self.dy -= self.v
 
     def move(self):
-        self.next_pos = self.pos[0] + self.dx, self.pos[1] + self.dy
-        if self.is_free(self.next_pos):
+        if self.is_free():
             self.rect = self.rect.move(self.dx, self.dy)
             self.pos = self.next_pos
 
-    def is_free(self, pos):  # метод, который будет проверять клетку в которую мы пытаемся пойти,
+    def is_free(self):  # метод, который будет проверять клетку в которую мы пытаемся пойти,
         # если там препятствие - вернет False, иначе True
-        pos1 = level_mode.levels[level_mode.current_level].get_cell(pos)
-        pos2 = level_mode.levels[level_mode.current_level].get_cell((pos[0] + self.rect.w, pos[1] + self.rect.h))
-        pos3 = level_mode.levels[level_mode.current_level].get_cell((pos[0], pos[1] + self.rect.h))
-        pos4 = level_mode.levels[level_mode.current_level].get_cell((pos[0] + self.rect.w, pos[1]))
-        if pos1:
-            if level_mode.levels[level_mode.current_level].get_tile_id(pos1) in \
-                    level_mode.levels[level_mode.current_level].not_free_tiles:
-                return False
-        if pos2:
-            if level_mode.levels[level_mode.current_level].get_tile_id(pos2) in \
-                    level_mode.levels[level_mode.current_level].not_free_tiles:
-                return False
-        if pos3:
-            if level_mode.levels[level_mode.current_level].get_tile_id(pos3) in \
-                    level_mode.levels[level_mode.current_level].not_free_tiles:
-                return False
-        if pos4:
-            if level_mode.levels[level_mode.current_level].get_tile_id(pos4) in \
-                    level_mode.levels[level_mode.current_level].not_free_tiles:
-                return False
-            return True
-        return False
+        newrect = self.rect.move(self.dx, self.dy)
+        if newrect.collidelist(level_mode.levels[level_mode.current_level].not_free_rects) != -1:
+            return False
+        return True
 
     def do_animate(self):
         global animation_frequency
@@ -203,6 +184,7 @@ class Level:
         self.tile_size = self.map.tilewidth
         self.enemies = enemies_path
         self.not_free_tiles = not_free_tiles
+        self.not_free_rects = self.generate_rects()
 
     def get_left_top_pixel_of_cell(self, pixel_pos):
         x, y = pixel_pos
@@ -218,6 +200,16 @@ class Level:
         if 0 <= row < self.height and 0 <= column < self.width:
             return column, row
         return None
+
+    def generate_rects(self):
+        rects = []
+        for i in range(self.map.width):
+            for j in range(self.map.height):
+                if self.map.tiledgidmap[self.map.get_tile_gid(i, j, 0)] in self.not_free_tiles:
+                    rect = pygame.Rect(i * self.map.tilewidth, j * self.map.tileheight,
+                                       self.map.tilewidth, self.map.tileheight)
+                    rects.append(rect)
+        return rects
 
     def spawn_enemies(self, enemies):
         pass
