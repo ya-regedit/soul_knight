@@ -55,6 +55,10 @@ class Knight(pygame.sprite.Sprite):
         del self.normal_static_frames[8:]
         del self.reversed_static_frames[4:8]
         del self.reversed_static_frames[8:]
+        del self.normal_frames[:4]
+        del self.normal_frames[3:8]
+        del self.reversed_frames[:4]
+        del self.reversed_frames[3:8]
 
         self.cur_frame = 0
         self.image = self.normal_frames[self.cur_frame]
