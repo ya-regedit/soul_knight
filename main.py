@@ -5,9 +5,11 @@ import pygame
 import pytmx
 
 from copy import copy
-from math import sqrt, asin, radians, degrees, atan
+from math import sqrt, asin, radians, degrees, atan, hypot
 
 pygame.init()
+
+db_bullets = {0: 'Bullet1.png', 1: 'Bullet2.png'}
 
 
 def load_image(name, colorkey=None):
@@ -102,6 +104,8 @@ class Knight(pygame.sprite.Sprite):
                 self.dy += self.v
             elif ev.key == pygame.K_DOWN:
                 self.dy -= self.v
+        if ev.type == pygame.MOUSEBUTTONDOWN:
+            self.gun.shoot(self.gun.id_bullets)
 
     def render(self):
         self.show_gun(self.gun_id)
@@ -154,8 +158,8 @@ class Knight(pygame.sprite.Sprite):
             animation_frequency = 0
 
     def show_gun(self, gun_id):
-        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (5, 5)),
-                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (50, 20)), (0, -5))]
+        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (5, 5), 0, 2),
+                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (50, 20)), (0, -5), 0, 2)]
         self.gun = self.guns[gun_id]
 
 
@@ -257,7 +261,7 @@ class Level:
 
 
 class Gun(pygame.sprite.Sprite):
-    def __init__(self, img: pygame.image, shift: tuple):
+    def __init__(self, img: pygame.image, shift: tuple, id_bullets, v_bullets):
         super(Gun, self).__init__()
         self.shift_x, self.shift_y = shift
         self.image = self.source_img = img
@@ -266,6 +270,12 @@ class Gun(pygame.sprite.Sprite):
                                      self.image.get_width(), self.image.get_height())
         self.last_image = None
         self.angle = None
+
+        self.id_bullets = id_bullets
+        self.v_bullets = v_bullets
+
+        self.adjacent_cathet = 0
+        self.opposite_cathet = 0
 
     def rot_around_center(self, image, angle, x, y):
         rotated_image = pygame.transform.rotate(image, angle)
@@ -277,11 +287,11 @@ class Gun(pygame.sprite.Sprite):
             mouse_pos = pygame.mouse.get_pos()
             center_coords = knight_main.rect.center
 
-            adjacent_cathet = sqrt((mouse_pos[0] - center_coords[0]) ** 2)
-            opposite_cathet = sqrt((mouse_pos[1] - center_coords[1]) ** 2)
+            self.adjacent_cathet = sqrt((mouse_pos[0] - center_coords[0]) ** 2)
+            self.opposite_cathet = sqrt((mouse_pos[1] - center_coords[1]) ** 2)
 
-            if adjacent_cathet != 0:
-                self.angle = degrees(atan(opposite_cathet / adjacent_cathet))
+            if self.adjacent_cathet != 0:
+                self.angle = degrees(atan(self.opposite_cathet / self.adjacent_cathet))
 
                 if mouse_pos[1] > center_coords[1]:
                     self.angle = -self.angle
@@ -317,9 +327,50 @@ class Gun(pygame.sprite.Sprite):
                 self.rect.x -= 40
         screen.blit(self.image, self.rect)
 
+    def shoot(self, id_bullets):
+        mouse_pos = pygame.mouse.get_pos()
+        right = True if mouse_pos[0] > knight_main.rect.center[0] else False
+        top = True if mouse_pos[1] < knight_main.rect.center[1] else False
+        bullet = Bullet(right, top)
+
+        normal_img = load_image(db_bullets[id_bullets])
+        reversed_img = pygame.transform.flip(normal_img, True, False)
+        bullet.image = normal_img
+        bullet.rect = bullet.image.get_rect()
+
+        bullet.rect.center = (self.rect.center[0], self.rect.center[1])
+        if self.angle < 0:
+            bullet.rect.center = bullet.rect.center[0] + 7, bullet.rect.center[1]
+
+        bullet.image, bullet.rect = self.rot_around_center(bullet.image, self.angle, *bullet.rect.center)
+        screen.blit(bullet.image, bullet.rect)
+
 
 class Bullet(pygame.sprite.Sprite):
-    pass
+    def __init__(self, right, top):
+        super(Bullet, self).__init__(bullets)
+
+        self.right = right
+        self.top = top
+
+        self.vec_x = knight_main.gun.adjacent_cathet
+        self.vec_y = knight_main.gun.opposite_cathet
+
+    def update(self):
+        coeff = max(abs(self.vec_x), abs(self.vec_y)) / min(abs(self.vec_x), abs(self.vec_y))
+        vx, vy = knight_main.gun.v_bullets * coeff, knight_main.gun.v_bullets
+
+        if self.vec_x < self.vec_y:
+            vx, vy = vy, vx
+
+        if self.right:
+            self.rect.x += vx
+        else:
+            self.rect.x -= vx
+        if self.top:
+            self.rect.y -= vy
+        else:
+            self.rect.y += vy
 
 
 class ModeWithLevels:
@@ -348,8 +399,9 @@ if __name__ == '__main__':
 
     all_sprites = pygame.sprite.Group()
     enemies = pygame.sprite.Group()  # это пока будет тут, потом пойдет в класс режима игры
+    bullets = pygame.sprite.Group()
 
-    knight_main = Knight((150, 150), 100, load_image('knight.png'), 1)
+    knight_main = Knight((150, 150), 100, load_image('knight.png'), 0)
 
     level_mode = ModeWithLevels(knight_main)  # в дальнейшем это будет вызываться при
     # нажатии на экране кнопки "Режим уровней"
@@ -361,8 +413,11 @@ if __name__ == '__main__':
             if event.type == pygame.QUIT:
                 running = False
             knight_main.update(event)
+
         knight_main.move()
         knight_main.do_animate()
+        bullets.update()
+        bullets.draw(screen)
         knight_main.render()
 
         pygame.display.update()
