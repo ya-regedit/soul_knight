@@ -158,8 +158,9 @@ class Knight(pygame.sprite.Sprite):
             animation_frequency = 0
 
     def show_gun(self, gun_id):
-        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (5, 5), 0, 2),
-                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (50, 20)), (0, -5), 0, 2)]
+        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (5, 5), 0, 15),
+                     # размеры, сдвиг относительно центра перса, тип патронов, средняя скорость пуль
+                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (50, 20)), (0, -5), 0, 15)]
         self.gun = self.guns[gun_id]
 
 
@@ -293,11 +294,11 @@ class Gun(pygame.sprite.Sprite):
             if self.adjacent_cathet != 0:
                 self.angle = degrees(atan(self.opposite_cathet / self.adjacent_cathet))
 
-                if mouse_pos[1] > center_coords[1]:
+                if mouse_pos[1] > center_coords[1]:  # если курсор выше персонажа
                     self.angle = -self.angle
 
-                if mouse_pos[0] > center_coords[0]:
-                    if knight_main.dx == 0 and knight_main.dy == 0:
+                if mouse_pos[0] > center_coords[0]:  # если курсор правее персонажа
+                    if knight_main.dx == 0 and knight_main.dy == 0:  # если персонаж стоит на месте
                         knight_main.image = knight_main.normal_static_frames[knight_main.cur_frame]
                     else:
                         knight_main.image = knight_main.normal_frames[knight_main.cur_frame]
@@ -329,36 +330,46 @@ class Gun(pygame.sprite.Sprite):
 
     def shoot(self, id_bullets):
         mouse_pos = pygame.mouse.get_pos()
+
         right = True if mouse_pos[0] > knight_main.rect.center[0] else False
         top = True if mouse_pos[1] < knight_main.rect.center[1] else False
-        bullet = Bullet(right, top)
+
+        bullet = Bullet(right, top, self.v_bullets)
 
         normal_img = load_image(db_bullets[id_bullets])
         reversed_img = pygame.transform.flip(normal_img, True, False)
+
         bullet.image = normal_img
         bullet.rect = bullet.image.get_rect()
+        bullet.rect.center = (self.rect.center[0] + 7, self.rect.center[1])
 
-        bullet.rect.center = (self.rect.center[0], self.rect.center[1])
-        if self.angle < 0:
-            bullet.rect.center = bullet.rect.center[0] + 7, bullet.rect.center[1]
-
-        bullet.image, bullet.rect = self.rot_around_center(bullet.image, self.angle, *bullet.rect.center)
+        if not right:
+            bullet.image = reversed_img
+            bullet.image, bullet.rect = self.rot_around_center(bullet.image, -self.angle, *bullet.rect.center)
+        else:
+            bullet.image, bullet.rect = self.rot_around_center(bullet.image, self.angle, *bullet.rect.center)
         screen.blit(bullet.image, bullet.rect)
 
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, right, top):
+    def __init__(self, right, top, average_v):
         super(Bullet, self).__init__(bullets)
 
-        self.right = right
+        self.right = right  # направления полета пули
         self.top = top
 
         self.vec_x = knight_main.gun.adjacent_cathet
         self.vec_y = knight_main.gun.opposite_cathet
 
+        self.average_v = average_v
+
     def update(self):
         coeff = max(abs(self.vec_x), abs(self.vec_y)) / min(abs(self.vec_x), abs(self.vec_y))
-        vx, vy = knight_main.gun.v_bullets * coeff, knight_main.gun.v_bullets
+        vx, vy = self.average_v * coeff, self.average_v
+
+        if vx > self.average_v:
+            vx = self.average_v
+            vy = self.average_v / coeff
 
         if self.vec_x < self.vec_y:
             vx, vy = vy, vx
@@ -401,7 +412,7 @@ if __name__ == '__main__':
     enemies = pygame.sprite.Group()  # это пока будет тут, потом пойдет в класс режима игры
     bullets = pygame.sprite.Group()
 
-    knight_main = Knight((150, 150), 100, load_image('knight.png'), 0)
+    knight_main = Knight((150, 150), 100, load_image('knight.png'), 1)  # выбор оружия выполняется здесь
 
     level_mode = ModeWithLevels(knight_main)  # в дальнейшем это будет вызываться при
     # нажатии на экране кнопки "Режим уровней"
@@ -416,8 +427,10 @@ if __name__ == '__main__':
 
         knight_main.move()
         knight_main.do_animate()
+
         bullets.update()
         bullets.draw(screen)
+
         knight_main.render()
 
         pygame.display.update()
