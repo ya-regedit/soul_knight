@@ -3,13 +3,20 @@ import sys
 
 import pygame
 import pytmx
+import pygame_gui
 
 from copy import copy
-from math import sqrt, asin, radians, degrees, atan, hypot
+from math import sqrt, degrees, atan
+
+from constants import *
+from UI import manager, show_level_btns, hide_level_btns, show_main_btns, hide_main_btns, \
+    level_mode_btn, hardcore_mode_btn, back_btn, level_btns, level1, \
+    level2, level3, level4, level5, level6, level7, level8, level9
 
 pygame.init()
-
-db_bullets = {0: 'Bullet1.png', 1: 'Bullet2.png'}
+screen = pygame.display.set_mode(size)
+pygame.display.set_caption('Soul Knight')
+clock = pygame.time.Clock()
 
 
 def load_image(name, colorkey=None):
@@ -29,8 +36,35 @@ def load_image(name, colorkey=None):
     return image
 
 
-class Knight(pygame.sprite.Sprite):
+def start_screen():
+    global running, current_level
+    hide_level_btns()
+    while running:
+        events = pygame.event.get()
+        time_delta = clock.tick(fps) / 1000.0
+        for event in events:
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.USEREVENT:
+                if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                    if event.ui_element == level_mode_btn:
+                        hide_main_btns()
+                        show_level_btns()
+                    if event.ui_element == back_btn:
+                        hide_level_btns()
+                        show_main_btns()
+                    if event.ui_element == level1:
+                        current_level = 0
+                        return
+            manager.process_events(event)
+        manager.update(time_delta)
+        screen.blit(pygame.transform.scale(load_image('background.png'), (w, h)), (0, 0))
+        manager.draw_ui(screen)
+        pygame.display.flip()
+        clock.tick(fps)
 
+
+class Knight(pygame.sprite.Sprite):
     def __init__(self, pos: tuple, hp,
                  sheet: pygame.image, gun_id):
         super(Knight, self).__init__(all_sprites)
@@ -158,9 +192,9 @@ class Knight(pygame.sprite.Sprite):
             animation_frequency = 0
 
     def show_gun(self, gun_id):
-        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (5, 5), 0, 15),
+        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (5, 5), 0, 10),
                      # размеры, сдвиг относительно центра перса, тип патронов, средняя скорость пуль
-                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (50, 20)), (0, -5), 0, 15)]
+                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (50, 20)), (0, -5), 0, 10)]
         self.gun = self.guns[gun_id]
 
 
@@ -383,12 +417,16 @@ class Bullet(pygame.sprite.Sprite):
         else:
             self.rect.y += vy
 
+        if self.rect.collidelist(level_mode.levels[level_mode.current_level].not_free_rects) != -1:
+            self.kill()
+            # здесь будет нанесение урона врагу
+
 
 class ModeWithLevels:
-    def __init__(self, knight: Knight):
+    def __init__(self, knight: Knight, current_level):
         self.knight = knight
-        self.levels = [[None] * 15]
-        self.current_level = 0  # будет зависеть от нажатой кнопки с номером уровня
+        self.levels = [[None] * 9]
+        self.current_level = current_level  # будет зависеть от нажатой кнопки с номером уровня
 
     def render(self):
         self.levels[self.current_level].render()
@@ -398,23 +436,15 @@ class HardcoreMode:
     pass
 
 
+start_screen()
 if __name__ == '__main__':
-    size = w, h = 1230, 960
-    screen = pygame.display.set_mode(size)
-    pygame.display.set_caption('Start')
-    clock = pygame.time.Clock()
-    running = True
-    fps = 100
-    ticks = 0
-    animation_frequency = 0
-
     all_sprites = pygame.sprite.Group()
     enemies = pygame.sprite.Group()  # это пока будет тут, потом пойдет в класс режима игры
     bullets = pygame.sprite.Group()
 
-    knight_main = Knight((150, 150), 100, load_image('knight.png'), 1)  # выбор оружия выполняется здесь
+    knight_main = Knight((150, 150), 100, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
 
-    level_mode = ModeWithLevels(knight_main)  # в дальнейшем это будет вызываться при
+    level_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
     # нажатии на экране кнопки "Режим уровней"
     level_mode.levels = [Level('maps/Level1.tmx', 'enemies/enemies1', [21])]
 
@@ -423,6 +453,7 @@ if __name__ == '__main__':
         for event in events:
             if event.type == pygame.QUIT:
                 running = False
+
             knight_main.update(event)
 
         knight_main.move()
