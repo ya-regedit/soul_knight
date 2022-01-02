@@ -164,14 +164,14 @@ class Knight(pygame.sprite.Sprite):
         global animation_frequency
         if animation_frequency > 10:
             self.cur_frame = (self.cur_frame + 1) % len(self.normal_frames)
-            if self.dx > 0:
-                if self.direction_of_vision['Right']:
+            if self.dx > 0:  # если идет вправо
+                if self.direction_of_vision['Right']:  # и при этом смотрит вправо
                     self.image = self.normal_frames[self.cur_frame]
                 else:
                     self.image = self.reversed_frames[self.cur_frame]
 
-            elif self.dx < 0:
-                if self.direction_of_vision['Left']:
+            elif self.dx < 0:  # если идет влево
+                if self.direction_of_vision['Left']:  # и при этом смотрит влево
                     self.image = self.reversed_frames[self.cur_frame]
                 else:
                     self.image = self.normal_frames[self.cur_frame]
@@ -327,32 +327,34 @@ class Gun(pygame.sprite.Sprite):
 
             if self.adjacent_cathet != 0:
                 self.angle = degrees(atan(self.opposite_cathet / self.adjacent_cathet))
+            else:
+                self.angle = 90
 
-                if mouse_pos[1] > center_coords[1]:  # если курсор выше персонажа
-                    self.angle = -self.angle
+            if mouse_pos[1] > center_coords[1]:  # если курсор выше персонажа
+                self.angle = -self.angle
 
-                if mouse_pos[0] > center_coords[0]:  # если курсор правее персонажа
-                    if knight_main.dx == 0 and knight_main.dy == 0:  # если персонаж стоит на месте
-                        knight_main.image = knight_main.normal_static_frames[knight_main.cur_frame]
-                    else:
-                        knight_main.image = knight_main.normal_frames[knight_main.cur_frame]
-
-                    self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *self.rect.center)
-
-                    knight_main.direction_of_vision['Right'], \
-                    knight_main.direction_of_vision['Left'] = True, False
-
+            if mouse_pos[0] > center_coords[0]:  # если курсор правее персонажа
+                if knight_main.dx == 0 and knight_main.dy == 0:  # если персонаж стоит на месте
+                    knight_main.image = knight_main.normal_static_frames[knight_main.cur_frame]
                 else:
-                    if knight_main.dx == 0 and knight_main.dy == 0:
-                        knight_main.image = knight_main.reversed_static_frames[knight_main.cur_frame]
-                    else:
-                        knight_main.image = knight_main.reversed_frames[knight_main.cur_frame]
+                    knight_main.image = knight_main.normal_frames[knight_main.cur_frame]
 
-                    self.image, self.rect = self.rot_around_center(self.image, self.angle, *self.rect.center)
-                    self.image = pygame.transform.flip(self.image, True, False)
-                    self.rect.x -= 40
-                    knight_main.direction_of_vision['Right'], \
-                    knight_main.direction_of_vision['Left'] = False, True
+                self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *self.rect.center)
+
+                knight_main.direction_of_vision['Right'], \
+                knight_main.direction_of_vision['Left'] = True, False
+
+            else:
+                if knight_main.dx == 0 and knight_main.dy == 0:
+                    knight_main.image = knight_main.reversed_static_frames[knight_main.cur_frame]
+                else:
+                    knight_main.image = knight_main.reversed_frames[knight_main.cur_frame]
+
+                self.image, self.rect = self.rot_around_center(self.image, self.angle, *self.rect.center)
+                self.image = pygame.transform.flip(self.image, True, False)
+                self.rect.x -= 40
+                knight_main.direction_of_vision['Right'], \
+                knight_main.direction_of_vision['Left'] = False, True
 
         else:
             if knight_main.direction_of_vision['Right']:
@@ -377,12 +379,13 @@ class Gun(pygame.sprite.Sprite):
         bullet.rect = bullet.image.get_rect()
         bullet.rect.center = (self.rect.center[0] + 7, self.rect.center[1])
 
-        if not right:
-            bullet.image = reversed_img
-            bullet.image, bullet.rect = self.rot_around_center(bullet.image, -self.angle, *bullet.rect.center)
-        else:
-            bullet.image, bullet.rect = self.rot_around_center(bullet.image, self.angle, *bullet.rect.center)
-        screen.blit(bullet.image, bullet.rect)
+        if self.angle:
+            if not right:
+                bullet.image = reversed_img
+                bullet.image, bullet.rect = self.rot_around_center(bullet.image, -self.angle, *bullet.rect.center)
+            else:
+                bullet.image, bullet.rect = self.rot_around_center(bullet.image, self.angle, *bullet.rect.center)
+            screen.blit(bullet.image, bullet.rect)
 
 
 class Bullet(pygame.sprite.Sprite):
@@ -398,15 +401,24 @@ class Bullet(pygame.sprite.Sprite):
         self.average_v = average_v
 
     def update(self):
-        coeff = max(abs(self.vec_x), abs(self.vec_y)) / min(abs(self.vec_x), abs(self.vec_y))
-        vx, vy = self.average_v * coeff, self.average_v
+        try:
+            coeff = max(abs(self.vec_x), abs(self.vec_y)) / min(abs(self.vec_x), abs(self.vec_y))
 
-        if vx > self.average_v:
-            vx = self.average_v
-            vy = self.average_v / coeff
+            vx, vy = self.average_v * coeff, self.average_v
 
-        if self.vec_x < self.vec_y:
-            vx, vy = vy, vx
+            if vx > self.average_v:
+                vx = self.average_v
+                vy = self.average_v / coeff
+
+            if self.vec_x < self.vec_y:
+                vx, vy = vy, vx
+
+        except ZeroDivisionError:
+            mouse_pos = pygame.mouse.get_pos()
+            if not self.vec_y:
+                vx, vy = self.average_v, 0
+            elif not self.vec_x:
+                vx, vy = 0, self.average_v
 
         if self.right:
             self.rect.x += vx
@@ -426,7 +438,7 @@ class ModeWithLevels:
     def __init__(self, knight: Knight, current_level):
         self.knight = knight
         self.levels = [[None] * 9]
-        self.current_level = current_level  # будет зависеть от нажатой кнопки с номером уровня
+        self.current_level = current_level  # зависит от нажатой кнопки с номером уровня
 
     def render(self):
         self.levels[self.current_level].render()
