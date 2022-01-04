@@ -53,8 +53,8 @@ def start_screen():
                     if event.ui_element == back_btn:
                         hide_level_btns()
                         show_main_btns()
-                    if event.ui_element == level1:
-                        current_level = 0
+                    if event.ui_element in level_btns and event.ui_element != back_btn:
+                        current_level = int(event.ui_element.text[-1]) - 1
                         return
             manager.process_events(event)
         manager.update(time_delta)
@@ -454,11 +454,19 @@ if __name__ == '__main__':
     enemies = pygame.sprite.Group()  # это пока будет тут, потом пойдет в класс режима игры
     bullets = pygame.sprite.Group()
 
-    knight_main = Knight((150, 150), 100, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
+    knight_main = Knight((60, 60), 100, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
 
     level_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
     # нажатии на экране кнопки "Режим уровней"
-    level_mode.levels = [Level('maps/Level1.tmx', 'enemies/enemies1', [21])]
+    level_mode.levels = [Level('maps/Level1.tmx', 'enemies/enemies1', [21]),
+                         Level('maps/Level2.tmx', 'enemies/enemies1', [21]),
+                         Level('maps/Level3.tmx', 'enemies/enemies1', [21]),
+                         Level('maps/Level4.tmx', 'enemies/enemies1', [21]),
+                         Level('maps/Level5.tmx', 'enemies/enemies1', [21]),
+                         Level('maps/Level6.tmx', 'enemies/enemies1', [21]),
+                         Level('maps/Level7.tmx', 'enemies/enemies1', [13, 14]),
+                         Level('maps/Level8.tmx', 'enemies/enemies1', [13, 14]),
+                         Level('maps/Level9.tmx', 'enemies/enemies1', [13, 14])]
 
     while running:
         events = pygame.event.get()

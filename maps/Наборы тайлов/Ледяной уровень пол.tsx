@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tileset version="1.5" tiledversion="1.7.2" name="Ледяной уровень пол" tilewidth="30" tileheight="30" tilecount="20" columns="5">
- <image source="Ледяной уровень пол.jpg" width="150" height="120"/>
+ <image source="../Картинки для тайлов/Ледяной уровень пол.jpg" width="150" height="120"/>
  <wangsets>
   <wangset name="Безымянный набор" type="mixed" tile="-1">
    <wangcolor name="Шаблон1" color="#ff0000" tile="-1" probability="1"/>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="41" height="32" tilewidth="30" tileheight="30" infinite="0" nextlayerid="2" nextobjectid="1">
+ <tileset firstgid="1" source="Наборы тайлов/Пол для второй локации.tsx"/>
+ <tileset firstgid="21" source="Наборы тайлов/Стены для второй локации.tsx"/>
+ <layer id="1" name="Слой тайлов 1" width="41" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzVWNtWwjAQ3FIQiq3Q0v7/rxqOO6fjMKmiL/qwR7vJ3ncnCUtELP+AroW6QudCTaFdobbQnvYczFpDf7fW8LdNmvMbulluzPUxedhz5w2F3tKXl0LHQifxUde6/DuYtbv+PtdOaf9WaEr/bqSb5TgW3qM5uOfzNW2wj52ssUytDsgL7IM3kW7W2YmOmo/3fF7iowewZ6BcY21P8dfqoLpRZ641dOreo/io67fUhz2jif8n1KTvB+JNaU/je5U61maCv1FTjusZ4vlAb7Bf2ksX8rFL0jj0G7PFcT1DPB/oDfZLe4lnxlEfj3E1We8l1l7QPnEzM5E96AOf/foJZkLeYSYwQjFJc38hHs8H9GsMNUK8vH+mb4eZbfo9S74192qL9bdiB/+zDq5rQzbHjBM8Z/eU+/ZSL+2p0fB2pjb7WLHb1V9nmeO7GRsaF9vTWjSG52qDs8n1sPo4mBjVBrAAdhxu1/BW+ahNHx733XkJWeWpHPeN9gLPkfrkZuqaxPLY485LyDJP/f7NOaPxIL8z+etmRs/gXnjO7ynWHtBe4LNd7bkz38nrzPD6KWWZB79Yt5sFnuXR1HkxMnwfYXmdGc0/cq+yGitwQO3CtsNVrWVv5F0/qi+1O4XDGsZHte3ugioLn6ekNnw/ujy4uzWfaYuR11hVx2J01uLWfnSYP1Tyco5HLADeu7NUc+JwymHUd85wd+/Gt2LBLlbsc/jNOVGd/MZ4Fse27hiMBQ6jtZ6ckxrOHOLrnHFseE/BL+hC/yyxnmvurejqiXO+NtPKR7zuvJ7j851H33dDPF+TrXy4t+Q11tl157VilM4VCDlz+Ot6RPuF58G9SfQ3CM0x7J/j0UfGSr1HI3b2qfYbxo50u7e57uE84C6nezRW9a/2W4qbIa2Re5vrHs4D9yvvcVgJX/U+BT6wZQtnedbdm6PWx67WuucQ61zqmwa4jn7YwtnaOaV7/jq9A6CLPy8=
+  </data>
+ </layer>
+</map>

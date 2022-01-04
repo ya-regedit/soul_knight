@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="41" height="32" tilewidth="30" tileheight="30" infinite="0" nextlayerid="2" nextobjectid="1">
- <tileset firstgid="1" source="Ледяной уровень пол.tsx"/>
- <tileset firstgid="21" source="Стены для ледяного уровня.tsx"/>
+ <tileset firstgid="1" source="Наборы тайлов/Ледяной уровень пол.tsx"/>
+ <tileset firstgid="21" source="Наборы тайлов/Стены для ледяного уровня.tsx"/>
  <layer id="1" name="Слой тайлов 1" width="41" height="32">
   <data encoding="base64" compression="zlib">
-   eJzVmLFuwzAMRA1nkId0zP//ajOUwMvLnZ1ORQeBqS1SJHVH0n1s2/b4B2t/rtsv5Ndzrec6IO8/z0fyt/VXeHaXvZHjo+0nOTZok762eOb9ob2ObQ9n7vBxbO7l9y3YsK9NpjwvyLP7WvDRsfE35b695+cKF84/ZYuHkj7et9eYW/yzmI9mf2TyY3xNuFjYSx/n/W17x87YoY+37fWuHBP/JteM6VV0J8/jY+JFOqvlKcW0gq1kd/DzVXRT7Rl/iZlD7864bz7Zlv1IuEp4NN9ZA3e9M/dTLbCvg1tjbvzyufSHeZzlO3LsPGOF/almz100bDRd3jWxa9w6dr7n/bZ7nHPJyVanEgaYx8SRVlfSnaU6lOruFYZnr++aNYT5b7XrrK+6P6T+1mp96mPmjPN8xWNK++T+0Pr82dzB2P2cs0niceOz85N6a+ulCWPkzNJ57v3kCOWcYc6a5+bW2czhmYA+pvrv+sv+N/qj55qX8OremnBqrhKPCbuuY84JY0w8MjbbDDTPE8db7Un4Jj6TjavlXpvqGvuMed04NTM/+wpnj9T7vexHO6vVSd9Bm/HuWKl+mEetz63t/b7Js3Qu8+g+3OaQlgPbsH6aRz1Hujanfp18TPOIuZnqJXU9z5OTLb7Ru/JxzvMs4BjswzznPJHqfPseHC6kHttmA/Im5dPfJ1wJo6M/utYZ2/TRdZ/zhWO1rUM2WQ9Sf0n9iXqOo30r0IbzY1v8TmEfTLMh79i+Ma8LOp57mD9i7pBdYvBqZmu1JfHIPjOPnFOo5xnhE19cd1I/T7Py7ONcwfpIXHklzLT9rca0mYf3xDwRF3/9/7pP1zdPCC9i
+   eJzVmNlWwzAMRENYEiCBsvT/+VTcnky5HUZuH+FBJ/UmyVpGcvfDMOz/AU2N5kZLo7HRLeZ8fNiz4rva3LztXbdzXBMv8jt8HzB+bPSEfa4j9ap0kpzqq73Sg2f8XpL5jLWXRq/b2gwdk72cf1pPX91/3ebGjebAS+d2jd4avTf6aPS5rd8VdqTdejpp32Q8ROM2v9henqUc6e1+34OP9rfxF8ljlX6bfs6cxjP2701+FS8uk36XjozlSsfK5+PQz0ft6eWfy6TfxecG5w8xcG88yFtx6rmU7Kx5/Z6Hfv6l/JaOaa2692K8+dvjTvN+F87Tzim/e3ZM8Z2wjb9vIa/KuRHkcndhrmdHj0Nhhed4lffJfvrqXJJb5XWyMe2oOCKusAYsWKO/t3w65gHjQryTXJ+TjISh9G+VU8xf5QBzxvHBbZ3k+pxjzzL8xo71QixwL3OY+o22xrxO2DUH/rKZ31MY3IuFIOOLv4lJxADiUi9vkx2JddK/igXGV8Jv5jbrkONXL2/FK9Upr8OOt46bZr/j2GuyYjKcjb5awY96eK+Q+gGvF17LPBaJ8Qmjenlb9BRnlOqzxftJH8ZS6hEYUz2ZSceE+YpZt6NwL2GL99Guv/Ogjau8pK+rfp13D3XqKL+KJcYB7647S95N4WvXMclxH1X3SPxlp+oM/dPbQx0rOZdq11rESc+H1/hZfdMlX19Tuypb9c54zKc9wo5rfJ1y0t+Nz4Utvd+p+tTJeDp2Cnt0lwrfHEM15l0T0a+VT10me1bn43in/Qv081ojDK56aN6ng9NnMu09dvI1e0++Y6U73+2pV07yVWe9TrNO8X8D2s/7niqOqhjzuEpxRvvpnskfjPX0zvV6zZys8jVhRZVv/oZwf0i/ZL/U66d8rmS7XytMIiakN6XsleyXeui/TN/h3GMi
   </data>
  </layer>
 </map>

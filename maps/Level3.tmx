@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="41" height="32" tilewidth="30" tileheight="30" infinite="0" nextlayerid="2" nextobjectid="1">
+ <tileset firstgid="1" source="Наборы тайлов/Ледяной уровень пол.tsx"/>
+ <tileset firstgid="21" source="Наборы тайлов/Стены для ледяного уровня.tsx"/>
+ <layer id="1" name="Слой тайлов 1" width="41" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzVmNty2zAMRBm7ilybit3G+v9frTqjnRyvFnLTp+QBo4spEgssF6Dn1tr8DawvNi32ttgVz4fFjrj29Z7P0zqH3v1YbFjfnRb7udh5NY2RjesYXQ9hjHz8tdjvxd4Xu6/jtL6+7/ae/s8YJ59mwy3sL/iW98Km+U/Az/m5ru75G8dorl7kYjbcwv6KOXkvbKcw9xzwVHzw2OqblIsZGJnTS3vkiNtg6+i940nfKr4pP+IeuaVcO7Yb8KR1yFv6SGxvO3GcivzIn6k9xqjiTQcOt6vFXu+JjfvmGK6OR9zzcfLb9y7HTMXa/KbKteItPB2W5pzb1hfFkfyfbMyI35Km7eVaOiGrdIJ8TByVRo3wgf7SN9clzvMs1+N6TbF+5uMR6ysfh7bl6N4a8lF81+/PdFax1vO9GEe9lx9je9wTvK+4zhikvZuwKdZ6Tv4NYV5qEX3U9xXXP2Nez/Wc/DvDj6QRn137aHMQT8JWaYXiOhgWxtH7B9WFlC/WE2LVOOZFmut68feaatu5bTWWeScP++pf4iLrCXEmbrHfcS1Ltc1rRbfviF91IeXrHXMyhinmQ3vMjfBXdeIOH4T90La+KsZpjr26vGfybcT8jBN1xjnH3nX8j7Wr/SJM1/axT7030LPXD9cZak1vj/ruvfQEcz5WcZefyYeKv8Q9Ft8y3uQEdabS8MrPl+DTa/vQBvFX/bP3GamOCRd7fRn78NRbu15II3xPXTCHNEO9mcdur3alcYxj6j/Tme3Stjp2W+dwTVd+Uo+btDD1Zh7HHubyON5aXVPJK57DyLs9LjGG5ELSx6qHZ8/rfWDCqfxU3OvFOq7RjOOzeu864uMTzr3zabVOdXZ0PlZxZJ31M4fzXdgT95xrNN/3fO//P2j/ez/utVA+su7w/5W9Hj/xoDrru5ZSn6pewuNIXWb+985UiQfVWT/VIa+1KX6sV6xt1HCeqVwvEg/+5az/Fe0PHow6Cw==
+  </data>
+ </layer>
+</map>
