@@ -199,7 +199,7 @@ class Knight(pygame.sprite.Sprite):
 
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, pos: tuple, hp, image: pygame.image):
+    def __init__(self, pos: tuple, hp, image: pygame.image, gun_id):
         super(Enemy, self).__init__(all_sprites, enemies)
         self.rect = image.get_rect()
         self.rect.x, self.rect.y = level_mode.levels[level_mode.current_level].get_left_top_pixel_of_cell(pos)
@@ -210,6 +210,15 @@ class Enemy(pygame.sprite.Sprite):
         self.effect = None
         self.effect_end = 0
         self.image = image
+        self.guns = None
+        self.gun = None
+        self.gun_id = gun_id
+
+    def show_gun(self, gun_id):
+        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (5, 5), 0, 10),
+                     # размеры, сдвиг относительно центра перса, тип патронов, средняя скорость пуль
+                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (50, 20)), (0, -5), 0, 10)]
+        self.gun = self.guns[gun_id]
 
     def move(self):  # можно в update, наверное, засунуть, ведь есть метод встроенный self.rect.move(x, y)
         pass
@@ -230,31 +239,34 @@ class Enemy(pygame.sprite.Sprite):
     def get_damage(self):
         pass
 
+    def render(self):
+        self.show_gun(self.gun_id)
+        self.gun.enemy_render()
+
 
 class EnemyShotguner(Enemy):
-    def __init__(self, pos: tuple, hp, image, field, gun):
-        super(EnemyShotguner, self).__init__(pos, hp, image)
-        self.gun = gun
-
-    def calc_move(self):
-        pass
+    def __init__(self, pos: tuple, hp, image, field, gun_id):
+        super(EnemyShotguner, self).__init__(pos, hp, image, gun_id)
+        self.field = field
 
 
 class EnemyRifler(Enemy):
-    def __init__(self, pos: tuple, hp, image, field, gun):
-        super(EnemyRifler, self).__init__(pos, hp, image)
-        self.gun = gun
+    def __init__(self, pos: tuple, hp, image, field, gun_id):
+        super(EnemyRifler, self).__init__(pos, hp, image, gun_id)
+        self.field = field
 
 
 class Level:
-    def __init__(self, map_path, enemies_path, not_free_tiles: list):
+    def __init__(self, map_path, enemies_list, not_free_tiles: list):
         self.map = pytmx.load_pygame(map_path)
         self.width = self.map.width
         self.height = self.map.height
         self.tile_size = self.map.tilewidth
-        self.enemies = enemies_path
+        self.enemies_list = enemies_list
         self.not_free_tiles = not_free_tiles
-        self.not_free_rects = self.generate_rects()
+        self.not_free_rects, self.map_arr = self.generate_rects_and_map_array()
+        self.enemies_sprites = pygame.sprite.Group()
+        self.enemies = []
 
     def get_left_top_pixel_of_cell(self, pixel_pos):
         x, y = pixel_pos
@@ -271,18 +283,33 @@ class Level:
             return column, row
         return None
 
-    def generate_rects(self):
+    def generate_rects_and_map_array(self):
         rects = []
+        map_arr = []
         for i in range(self.map.width):
+            line = []
             for j in range(self.map.height):
                 if self.map.tiledgidmap[self.map.get_tile_gid(i, j, 0)] in self.not_free_tiles:
                     rect = pygame.Rect(i * self.map.tilewidth, j * self.map.tileheight,
                                        self.map.tilewidth, self.map.tileheight)
                     rects.append(rect)
-        return rects
+                    line.append(1)
+                else:
+                    line.append(0)
+            map_arr.append(line)
+        return rects, map_arr
 
-    def spawn_enemies(self, enemies):
-        pass
+    def spawn_enemies(self):
+        e = []
+        for enemy in self.enemies_list:
+            pos = self.map.tilewidth * enemy[0][0], self.map.tileheight * enemy[0][1]
+            if 0 <= enemy[0][0] < self.map.width and 0 <= enemy[0][1] < self.map.height:
+                if enemy[1] == 1:
+                    e.append(EnemyRifler(pos, 10, load_image('knight.png'), 'тут будет передача поля', 0))
+                if enemy[1] == 0:
+                    e.append(EnemyRifler(pos, 10, load_image('knight.png'), 'тут будет передача поля', 0))
+                self.enemies_sprites.add(e[-1])
+        self.enemies = e
 
     def render(self):
         for x in range(self.width):
@@ -364,13 +391,57 @@ class Gun(pygame.sprite.Sprite):
                 self.rect.x -= 40
         screen.blit(self.image, self.rect)
 
+    def enemy_render(self, rect: pygame.Rect):
+        center_coords = rect.center
+        x, y = knight_main.rect.center
+        self.adjacent_cathet = sqrt((x - center_coords[0]) ** 2)
+        self.opposite_cathet = sqrt((y - center_coords[1]) ** 2)
+
+        if self.adjacent_cathet != 0:
+            self.angle = degrees(atan(self.opposite_cathet / self.adjacent_cathet))
+        else:
+            self.angle = 90
+        if y > center_coords[1]:  # если курсор выше персонажа
+            self.angle = -self.angle
+        if x > center_coords[0]:  # если курсор правее персонажа
+            self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *self.rect.center)
+        else:
+            self.image, self.rect = self.rot_around_center(self.image, self.angle, *self.rect.center)
+            self.image = pygame.transform.flip(self.image, True, False)
+            self.rect.x -= 40
+
+        screen.blit(self.image, self.rect)
+
     def shoot(self, id_bullets):
         mouse_pos = pygame.mouse.get_pos()
 
         right = True if mouse_pos[0] > knight_main.rect.center[0] else False
         top = True if mouse_pos[1] < knight_main.rect.center[1] else False
 
-        bullet = Bullet(right, top, self.v_bullets)
+        bullet = Bullet(right, top, self.v_bullets, self.adjacent_cathet, self.opposite_cathet)
+
+        normal_img = load_image(db_bullets[id_bullets])
+        reversed_img = pygame.transform.flip(normal_img, True, False)
+
+        bullet.image = normal_img
+        bullet.rect = bullet.image.get_rect()
+        bullet.rect.center = (self.rect.center[0] + 7, self.rect.center[1])
+
+        if self.angle:
+            if not right:
+                bullet.image = reversed_img
+                bullet.image, bullet.rect = self.rot_around_center(bullet.image, -self.angle, *bullet.rect.center)
+            else:
+                bullet.image, bullet.rect = self.rot_around_center(bullet.image, self.angle, *bullet.rect.center)
+            screen.blit(bullet.image, bullet.rect)
+
+    def enemy_shoot(self, id_bullets, rect):
+        x, y = knight_main.rect.center
+
+        right = True if x > rect.center[0] else False
+        top = True if y < rect.center[1] else False
+
+        bullet = Bullet(right, top, self.v_bullets, self.adjacent_cathet, self.opposite_cathet)
 
         normal_img = load_image(db_bullets[id_bullets])
         reversed_img = pygame.transform.flip(normal_img, True, False)
@@ -389,18 +460,19 @@ class Gun(pygame.sprite.Sprite):
 
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, right, top, average_v):
+    def __init__(self, right, top, average_v, adjacent_cathet, opposite_cathet):
         super(Bullet, self).__init__(bullets)
 
         self.right = right  # направления полета пули
         self.top = top
 
-        self.vec_x = knight_main.gun.adjacent_cathet
-        self.vec_y = knight_main.gun.opposite_cathet
+        self.vec_x = adjacent_cathet
+        self.vec_y = opposite_cathet
 
         self.average_v = average_v
 
     def update(self):
+        vx, vy = None, None
         try:
             coeff = max(abs(self.vec_x), abs(self.vec_y)) / min(abs(self.vec_x), abs(self.vec_y))
 
@@ -414,7 +486,6 @@ class Bullet(pygame.sprite.Sprite):
                 vx, vy = vy, vx
 
         except ZeroDivisionError:
-            mouse_pos = pygame.mouse.get_pos()
             if not self.vec_y:
                 vx, vy = self.average_v, 0
             elif not self.vec_x:
@@ -458,7 +529,7 @@ if __name__ == '__main__':
 
     level_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
     # нажатии на экране кнопки "Режим уровней"
-    level_mode.levels = [Level('maps/Level1.tmx', 'enemies/enemies1', [21]),
+    level_mode.levels = [Level('maps/Level1.tmx', [((0, 0), 0), ((50, 50), 0), ((7, 7), 0)], [21]),
                          Level('maps/Level2.tmx', 'enemies/enemies1', [21]),
                          Level('maps/Level3.tmx', 'enemies/enemies1', [21]),
                          Level('maps/Level4.tmx', 'enemies/enemies1', [21]),
@@ -467,6 +538,10 @@ if __name__ == '__main__':
                          Level('maps/Level7.tmx', 'enemies/enemies1', [13, 14]),
                          Level('maps/Level8.tmx', 'enemies/enemies1', [13, 14]),
                          Level('maps/Level9.tmx', 'enemies/enemies1', [13, 14])]
+
+    level_mode.levels[level_mode.current_level].spawn_enemies()
+    for e in level_mode.levels[current_level].enemies:
+        e.show_gun(e.gun_id)
 
     while running:
         events = pygame.event.get()
@@ -483,6 +558,11 @@ if __name__ == '__main__':
         bullets.draw(screen)
 
         knight_main.render()
+
+        level_mode.levels[current_level].enemies_sprites.draw(screen)
+        for e in level_mode.levels[current_level].enemies:
+            e.gun.enemy_render(e.rect)
+
 
         pygame.display.update()
         level_mode.render()
