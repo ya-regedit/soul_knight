@@ -10,8 +10,7 @@ from math import sqrt, degrees, atan
 
 from constants import *
 from UI import manager, show_level_btns, hide_level_btns, show_main_btns, hide_main_btns, \
-    level_mode_btn, hardcore_mode_btn, back_btn, level_btns, level1, \
-    level2, level3, level4, level5, level6, level7, level8, level9
+    level_mode_btn, hardcore_mode_btn, back_btn, level_btns
 
 pygame.init()
 screen = pygame.display.set_mode(size)
@@ -205,8 +204,10 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.x, self.rect.y = level_mode.levels[level_mode.current_level].get_left_top_pixel_of_cell(pos)
         self.pos = pos
         self.hp = hp
-        self.next_shot = 0
+        self.next_shot = 200
         self.next_move = 0
+        self.n_ticks = 0
+        self.reloading = False
         self.effect = None
         self.effect_end = 0
         self.image = image
@@ -224,13 +225,18 @@ class Enemy(pygame.sprite.Sprite):
         pass
 
     def shoot(self):
-        pass
+        self.gun.enemy_shoot(0, self.rect)
 
     def update(self, n_ticks):
-        if n_ticks > self.effect_end:
-            self.effect = None
-        if n_ticks > self.next_shot:
+        global ticks
+        if not self.reloading:
+            self.n_ticks = n_ticks
+            self.reloading = True
+        # if ticks - self.n_ticks > self.effect_end:
+        #     self.effect = None
+        if ticks - self.n_ticks > self.next_shot:
             self.shoot()
+            self.reloading = False
 
     def apply_effect(self, effect, time):
         self.effect = effect
@@ -302,7 +308,7 @@ class Level:
     def spawn_enemies(self):
         e = []
         for enemy in self.enemies_list:
-            pos = self.map.tilewidth * enemy[0][0], self.map.tileheight * enemy[0][1]
+            pos = self.tile_size * enemy[0][0], self.tile_size * enemy[0][1]
             if 0 <= enemy[0][0] < self.map.width and 0 <= enemy[0][1] < self.map.height:
                 if enemy[1] == 1:
                     e.append(EnemyRifler(pos, 10, load_image('knight.png'), 'тут будет передача поля', 0))
@@ -377,7 +383,7 @@ class Gun(pygame.sprite.Sprite):
                 else:
                     knight_main.image = knight_main.reversed_frames[knight_main.cur_frame]
 
-                self.image, self.rect = self.rot_around_center(self.image, self.angle, *self.rect.center)
+                self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *self.rect.center)
                 self.image = pygame.transform.flip(self.image, True, False)
                 self.rect.x -= 40
                 knight_main.direction_of_vision['Right'], \
@@ -404,9 +410,9 @@ class Gun(pygame.sprite.Sprite):
         if y > center_coords[1]:  # если курсор выше персонажа
             self.angle = -self.angle
         if x > center_coords[0]:  # если курсор правее персонажа
-            self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *self.rect.center)
+            self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *center_coords)
         else:
-            self.image, self.rect = self.rot_around_center(self.image, self.angle, *self.rect.center)
+            self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *center_coords)
             self.image = pygame.transform.flip(self.image, True, False)
             self.rect.x -= 40
 
@@ -562,14 +568,13 @@ if __name__ == '__main__':
         level_mode.levels[current_level].enemies_sprites.draw(screen)
         for e in level_mode.levels[current_level].enemies:
             e.gun.enemy_render(e.rect)
-
-
         pygame.display.update()
         level_mode.render()
         all_sprites.draw(screen)
         ticks += 1
         animation_frequency += 1
-        # enemies.update(ticks)
+
+        level_mode.levels[current_level].enemies_sprites.update(ticks)
         # enemies.draw(screen)
         clock.tick(fps)
     pygame.quit()
