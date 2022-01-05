@@ -220,10 +220,10 @@ class Enemy(pygame.sprite.Sprite):
         self.gun_id = gun_id
 
     def show_gun(self, gun_id):
-        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (5, 5), 0, 10, self, 2),
+        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (0, 0), 0, 10, self, 2),
                      # размеры, сдвиг относительно центра перса, тип патронов,
                      # средняя скорость пуль, владелец (для пуль), урон
-                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (50, 20)), (0, -5), 0, 10, self, 4)]
+                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (50, 20)), (0, 0), 0, 10, self, 4)]
         self.gun = self.guns[gun_id]
 
     def move(self):  # можно в update, наверное, засунуть, ведь есть метод встроенный self.rect.move(x, y)
@@ -316,15 +316,33 @@ class Level:
             map_arr.append(line)
         return rects, map_arr
 
-    def spawn_enemies(self):
+    def spawn_enemies(self, tile_size):
         e = []
+        image1 = load_image('enemy_1.png', -1)
+        image2 = load_image('enemy_2.png')
+
+        if image1.get_width() < image1.get_height():
+            k = tile_size[1] / image1.get_height()
+            image1 = pygame.transform.scale(image1, (round(k * image1.get_width()), tile_size[1]))
+        else:
+            k = tile_size[0] / image1.get_width()
+            image1 = pygame.transform.scale(image1, (tile_size[0], round(k * image1.get_height())))
+
+        if image2.get_width() < image2.get_height():
+            k = tile_size[1] / image2.get_height()
+            image2 = pygame.transform.scale(image2, (round(k * image2.get_width()), tile_size[1]))
+        else:
+            k = tile_size[0] / image2.get_width()
+            image2 = pygame.transform.scale(image2, (tile_size[0], round(k * image2.get_height())))
+
         for enemy in self.enemies_list:
             pos = self.tile_size * enemy[0][0], self.tile_size * enemy[0][1]
             if 0 <= enemy[0][0] < self.map.width and 0 <= enemy[0][1] < self.map.height:
                 if enemy[1] == 1:
-                    e.append(EnemyRifler(pos, 10, load_image('knight.png'), 'тут будет передача поля', 0))
+                    e.append(EnemyRifler(pos, 10, image1, 'тут будет передача поля', 0))
                 if enemy[1] == 0:
-                    e.append(EnemyRifler(pos, 10, load_image('knight.png'), 'тут будет передача поля', 0))
+
+                    e.append(EnemyRifler(pos, 10, image2, 'тут будет передача поля', 0))
                 self.enemies_sprites.add(e[-1])
         self.enemies = e
 
@@ -569,7 +587,9 @@ if __name__ == '__main__':
                          Level('maps/Level9.tmx', [((28, 6), 0), ((34, 10), 1), ((10, 25), 0),
                                                    ((6, 21), 1), ((25, 15), 0), ((26, 20), 1)], [13, 14])]
 
-    level_mode.levels[level_mode.current_level].spawn_enemies()
+    tile_size = level_mode.levels[level_mode.current_level].map.tilewidth, \
+                level_mode.levels[level_mode.current_level].map.tileheight
+    level_mode.levels[level_mode.current_level].spawn_enemies(tile_size)
     for e in level_mode.levels[current_level].enemies:
         e.show_gun(e.gun_id)
 
