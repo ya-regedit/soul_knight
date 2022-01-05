@@ -139,6 +139,9 @@ class Knight(pygame.sprite.Sprite):
                 self.dy -= self.v
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
             self.gun.shoot(self.gun.id_bullets)
+        if self.hp <= 0:
+            self.kill()
+            print("Game Over")
 
     def render(self):
         self.show_gun(self.gun_id)
@@ -191,9 +194,10 @@ class Knight(pygame.sprite.Sprite):
             animation_frequency = 0
 
     def show_gun(self, gun_id):
-        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (5, 5), 0, 10),
-                     # размеры, сдвиг относительно центра перса, тип патронов, средняя скорость пуль
-                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (50, 20)), (0, -5), 0, 10)]
+        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (5, 5), 0, 10, self, 2),
+                     # размеры, сдвиг относительно центра перса, тип патронов,
+                     # средняя скорость пуль, владелец (для пуль), урон
+                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (50, 20)), (0, -5), 0, 10, self, 4)]
         self.gun = self.guns[gun_id]
 
 
@@ -216,9 +220,10 @@ class Enemy(pygame.sprite.Sprite):
         self.gun_id = gun_id
 
     def show_gun(self, gun_id):
-        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (5, 5), 0, 10),
-                     # размеры, сдвиг относительно центра перса, тип патронов, средняя скорость пуль
-                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (50, 20)), (0, -5), 0, 10)]
+        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (5, 5), 0, 10, self, 2),
+                     # размеры, сдвиг относительно центра перса, тип патронов,
+                     # средняя скорость пуль, владелец (для пуль), урон
+                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (50, 20)), (0, -5), 0, 10, self, 4)]
         self.gun = self.guns[gun_id]
 
     def move(self):  # можно в update, наверное, засунуть, ведь есть метод встроенный self.rect.move(x, y)
@@ -237,6 +242,12 @@ class Enemy(pygame.sprite.Sprite):
         if ticks - self.n_ticks > self.next_shot:
             self.shoot()
             self.reloading = False
+        if self.hp <= 0:
+            level_mode.levels[level_mode.current_level].enemies.remove(self)
+            self.gun.kill()
+            self.kill()
+
+
 
     def apply_effect(self, effect, time):
         self.effect = effect
@@ -329,7 +340,7 @@ class Level:
 
 
 class Gun(pygame.sprite.Sprite):
-    def __init__(self, img: pygame.image, shift: tuple, id_bullets, v_bullets):
+    def __init__(self, img: pygame.image, shift: tuple, id_bullets, v_bullets, owner, damage):
         super(Gun, self).__init__()
         self.shift_x, self.shift_y = shift
         self.image = self.source_img = img
@@ -344,6 +355,8 @@ class Gun(pygame.sprite.Sprite):
 
         self.adjacent_cathet = 0
         self.opposite_cathet = 0
+        self.owner = owner
+        self.damage = damage
 
     def rot_around_center(self, image, angle, x, y):
         rotated_image = pygame.transform.rotate(image, angle)
@@ -424,7 +437,7 @@ class Gun(pygame.sprite.Sprite):
         right = True if mouse_pos[0] > knight_main.rect.center[0] else False
         top = True if mouse_pos[1] < knight_main.rect.center[1] else False
 
-        bullet = Bullet(right, top, self.v_bullets, self.adjacent_cathet, self.opposite_cathet)
+        bullet = Bullet(right, top, self.v_bullets, self.adjacent_cathet, self.opposite_cathet, self.owner, self.damage)
 
         normal_img = load_image(db_bullets[id_bullets])
         reversed_img = pygame.transform.flip(normal_img, True, False)
@@ -447,7 +460,7 @@ class Gun(pygame.sprite.Sprite):
         right = True if x > rect.center[0] else False
         top = True if y < rect.center[1] else False
 
-        bullet = Bullet(right, top, self.v_bullets, self.adjacent_cathet, self.opposite_cathet)
+        bullet = Bullet(right, top, self.v_bullets, self.adjacent_cathet, self.opposite_cathet, self.owner, self.damage)
 
         normal_img = load_image(db_bullets[id_bullets])
         reversed_img = pygame.transform.flip(normal_img, True, False)
@@ -466,12 +479,13 @@ class Gun(pygame.sprite.Sprite):
 
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, right, top, average_v, adjacent_cathet, opposite_cathet):
+    def __init__(self, right, top, average_v, adjacent_cathet, opposite_cathet, owner, damage):
         super(Bullet, self).__init__(bullets)
 
         self.right = right  # направления полета пули
         self.top = top
-
+        self.owner = owner
+        self.damage = damage
         self.vec_x = adjacent_cathet
         self.vec_y = opposite_cathet
 
@@ -509,7 +523,14 @@ class Bullet(pygame.sprite.Sprite):
         if self.rect.collidelist(level_mode.levels[level_mode.current_level].not_free_rects) != -1:
             self.kill()
             # здесь будет нанесение урона врагу
-
+        for enemy in level_mode.levels[level_mode.current_level].enemies:
+            if pygame.sprite.collide_mask(enemy, self) and enemy != self.owner:
+                enemy.hp -= self.damage
+                self.kill()
+                break
+        if pygame.sprite.collide_mask(knight_main, self) and self.owner != knight_main:
+            knight_main.hp -= self.damage
+            self.kill()
 
 class ModeWithLevels:
     def __init__(self, knight: Knight, current_level):
@@ -531,7 +552,7 @@ if __name__ == '__main__':
     enemies = pygame.sprite.Group()  # это пока будет тут, потом пойдет в класс режима игры
     bullets = pygame.sprite.Group()
 
-    knight_main = Knight((60, 60), 100, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
+    knight_main = Knight((60, 60), 20, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
 
     level_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
     # нажатии на экране кнопки "Режим уровней"
