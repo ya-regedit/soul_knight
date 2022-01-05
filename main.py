@@ -137,7 +137,7 @@ class Knight(pygame.sprite.Sprite):
                 self.dy += self.v
             elif ev.key == pygame.K_DOWN:
                 self.dy -= self.v
-        if ev.type == pygame.MOUSEBUTTONDOWN:
+        if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
             self.gun.shoot(self.gun.id_bullets)
 
     def render(self):
@@ -535,15 +535,18 @@ if __name__ == '__main__':
 
     level_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
     # нажатии на экране кнопки "Режим уровней"
-    level_mode.levels = [Level('maps/Level1.tmx', [((0, 0), 0), ((50, 50), 0), ((7, 7), 0)], [21]),
-                         Level('maps/Level2.tmx', 'enemies/enemies1', [21]),
-                         Level('maps/Level3.tmx', 'enemies/enemies1', [21]),
-                         Level('maps/Level4.tmx', 'enemies/enemies1', [21]),
-                         Level('maps/Level5.tmx', 'enemies/enemies1', [21]),
-                         Level('maps/Level6.tmx', 'enemies/enemies1', [21]),
-                         Level('maps/Level7.tmx', 'enemies/enemies1', [13, 14]),
-                         Level('maps/Level8.tmx', 'enemies/enemies1', [13, 14]),
-                         Level('maps/Level9.tmx', 'enemies/enemies1', [13, 14])]
+    level_mode.levels = [Level('maps/Level1.tmx', [((18, 5), 1), ((6, 14), 1), ((28, 19), 0)], [21]),
+                         Level('maps/Level2.tmx', [((13, 19), 1), ((27, 12), 1), ((5, 20), 0)], [21]),
+                         Level('maps/Level3.tmx', [((10, 14), 1), ((18, 10), 1), ((30, 12), 0)], [21]),
+                         Level('maps/Level4.tmx', [((14, 21), 1), ((26, 9), 1), ((6, 26), 0), ((33, 5), 0)], [21]),
+                         Level('maps/Level5.tmx', [((10, 6), 1), ((31, 5), 1), ((32, 11), 1), ((17, 29), 0)], [21]),
+                         Level('maps/Level6.tmx', [((2, 26), 0), ((10, 27), 0), ((29, 3), 0), ((19, 15), 1)], [21]),
+                         Level('maps/Level7.tmx', [((8, 27), 0), ((23, 2), 0), ((27, 17), 1),
+                                                   ((33, 6), 1), ((33, 27), 1), ((12, 2), 0)], [13, 14]),
+                         Level('maps/Level8.tmx', [((13, 12), 1), ((13, 19), 1), ((27, 12), 1),
+                                                   ((27, 19), 1), ((20, 29), 0), ((34, 16), 0)], [13, 14]),
+                         Level('maps/Level9.tmx', [((28, 6), 0), ((34, 10), 1), ((10, 25), 0),
+                                                   ((6, 21), 1), ((25, 15), 0), ((26, 20), 1)], [13, 14])]
 
     level_mode.levels[level_mode.current_level].spawn_enemies()
     for e in level_mode.levels[current_level].enemies:
@@ -554,7 +557,8 @@ if __name__ == '__main__':
         for event in events:
             if event.type == pygame.QUIT:
                 running = False
-
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 2:
+                print(level_mode.levels[level_mode.current_level].get_cell(event.pos))
             knight_main.update(event)
 
         knight_main.move()
