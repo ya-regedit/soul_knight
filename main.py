@@ -1,13 +1,15 @@
 import os
+import pprint
 import sys
 
 import pygame
 import pytmx
 import pygame_gui
 
+
 from random import choice
 from copy import copy
-from math import sqrt, degrees, atan
+from math import sqrt, degrees, atan, inf
 
 from constants import *
 from UI import manager, show_level_btns, hide_level_btns, show_main_btns, hide_main_btns, \
@@ -208,18 +210,28 @@ class Knight(pygame.sprite.Sprite):
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, pos: tuple, hp, image: pygame.image, gun_id):
-        super(Enemy, self).__init__(all_sprites, enemies)
+        super(Enemy, self).__init__(all_sprites, level_mode.levels[current_level].enemies_sprites)
         self.rect = image.get_rect()
         self.rect.x, self.rect.y = level_mode.levels[level_mode.current_level].get_left_top_pixel_of_cell(pos)
         self.pos = pos
         self.hp = hp
-        self.next_shot = 200
-        self.next_move = 0
-        self.n_ticks = 0
+        self.next_shot = 300
+        self.next_move = 100
+        self.n_ticks_shoot = 0
+        self.n_ticks_move = 0
+        self.n_ticks_effect = 0
+
         self.reloading = False
+        self.moving = False
+        self.v = level_mode.levels[current_level].tile_size
+        self.flag_float = 0
+        self.distances = []
+        self.dx, self.dy = 0, 0
+
         self.effect = None
         self.effect_end = 0
-        self.image = image
+        self.image = self.source_image = image
+        self.reversed_image = pygame.transform.flip(image, True, False)
         self.guns = None
         self.gun = None
         self.gun_id = gun_id
@@ -234,26 +246,80 @@ class Enemy(pygame.sprite.Sprite):
                                                     (50, 20)), (0, -5), self, 10, 100)]
         self.gun = self.guns[gun_id]
 
-    def move(self):  # можно в update, наверное, засунуть, ведь есть метод встроенный self.rect.move(x, y)
-        pass
-
     def shoot(self):
         self.gun.enemy_shoot()
 
     def update(self, n_ticks):
         global ticks
         if not self.reloading:
-            self.n_ticks = n_ticks
+            self.n_ticks_shoot = n_ticks
             self.reloading = True
-        # if ticks - self.n_ticks > self.effect_end:
-        #     self.effect = None
-        if ticks - self.n_ticks > self.next_shot:
+
+        if not self.moving:
+            self.n_ticks_move = n_ticks
+            self.moving = True
+
+        if ticks - self.n_ticks_effect > self.effect_end:
+            self.effect = None
+
+        if ticks - self.n_ticks_shoot > self.next_shot:
             self.shoot()
             self.reloading = False
         if self.hp <= 0:
             level_mode.levels[level_mode.current_level].enemies.remove(self)
             self.gun.kill()
             self.kill()
+
+        r0, c0 = level_mode.levels[current_level].get_cell((self.rect.x, self.rect.y))
+        r, c = level_mode.levels[current_level].get_cell((knight_main.rect.x, knight_main.rect.y))
+
+        width = level_mode.levels[current_level].width
+        height = level_mode.levels[current_level].height
+        if self.find_path(r0, c0, r, c):
+            for dr, dc in ((0, -1), (-1, 0), (0, 1), (1, 0)):
+                next_r, next_c = r0 + dr, c0 + dc
+                if (0 <= next_r < height and 0 <= next_c < width and
+                        self.distances[next_r][next_c] == self.distances[r0][c0] + 1):
+                    if ticks - self.n_ticks_move > self.next_move:
+                        self.dx, self.dy = 0.0625 * (self.v * dr), 0.0625 * (self.v * dc)
+                        if self.dx > 0:
+                            self.image = self.source_image
+                        elif self.dx < 0:
+                            self.image = self.reversed_image
+
+                        self.rect = self.rect.move(self.dx, self.dy)
+                        self.flag_float += 1
+                        if self.flag_float == 60:  # отвечает за "длину" шага
+                            self.moving = False
+                            self.flag_float = 0
+
+    def find_path(self, r0, c0, r1, c1):
+        width = level_mode.levels[current_level].width
+        height = level_mode.levels[current_level].height
+        self.distances = [[inf] * height for _ in range(width)]
+        self.distances[r0][c0] = 0
+        queue = [(r0, c0)]
+        while queue:
+            r, c = queue.pop(0)
+            if (r, c) == (r1, c1):
+                return True
+            if r1 >= r0:
+                priority_x = (1, 0)
+            else:
+                priority_x = (-1, 0)
+            if c1 >= c0:
+                priority_y = (1, 0)
+            else:
+                priority_y = (-1, 0)
+            for dr in priority_x:
+                for dc in priority_y:
+                    next_r, next_c = r + dr, c + dc
+                    if (0 <= next_r < height and 0 <= next_c < width and
+                            level_mode.levels[current_level].map_arr[next_r][next_c] != -1 and
+                            self.distances[next_r][next_c] == inf):
+                        self.distances[next_r][next_c] = self.distances[r][c] + 1
+                        queue.append((next_r, next_c))
+        return False
 
     def apply_effect(self, effect, time):
         self.effect = effect
@@ -274,7 +340,7 @@ class EnemyShotguner(Enemy):
 
 
 class EnemyRifler(Enemy):
-    def __init__(self, pos: tuple, hp, image, field, gun_id):
+    def __init__(self, pos: tuple, hp, image, field, gun_id):  # зачем тут field
         super(EnemyRifler, self).__init__(pos, hp, image, gun_id)
         self.field = field
 
@@ -316,7 +382,7 @@ class Level:
                     rect = pygame.Rect(i * self.map.tilewidth, j * self.map.tileheight,
                                        self.map.tilewidth, self.map.tileheight)
                     rects.append(rect)
-                    line.append(1)
+                    line.append(-1)
                 else:
                     line.append(0)
             map_arr.append(line)
@@ -384,7 +450,7 @@ class Gun(pygame.sprite.Sprite):
 
     def rot_around_center(self, image, angle, x, y):
         rotated_image = pygame.transform.rotate(image, angle)
-        new_rect = rotated_image.get_rect(center=image.get_rect(center=(x - 5, y)).center)
+        new_rect = rotated_image.get_rect(center=image.get_rect(center=(x, y)).center)
         return rotated_image, new_rect
 
     def render(self):
@@ -447,9 +513,11 @@ class Gun(pygame.sprite.Sprite):
         if y > center_coords[1]:  # если курсор выше персонажа
             self.angle = -self.angle
         if x > center_coords[0]:  # если курсор правее персонажа
-            self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *center_coords)
+            self.image, self.rect = self.rot_around_center(self.source_img, self.angle,
+                                                           *(center_coords[0], center_coords[1] + 5))
         else:
-            self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *center_coords)
+            self.image, self.rect = self.rot_around_center(self.source_img, self.angle,
+                                                           *(center_coords[0], center_coords[1] + 5))
             self.image = pygame.transform.flip(self.image, True, False)
 
         screen.blit(self.image, self.rect)
@@ -467,7 +535,7 @@ class Gun(pygame.sprite.Sprite):
 
         bullet.image = normal_img
         bullet.rect = bullet.image.get_rect()
-        bullet.rect.center = (self.rect.center[0] + 7, self.rect.center[1])
+        bullet.rect.center = (self.rect.center[0], self.rect.center[1])
 
         if self.angle:
             if not right:
@@ -735,10 +803,10 @@ if __name__ == '__main__':
 
     level_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
     # нажатии на экране кнопки "Режим уровней"
-    level_mode.levels = [Level('maps/Level1.tmx', [((18, 5), 1), ((6, 14), 1), ((28, 19), 0)], [21]),
+    level_mode.levels = [Level('maps/Level1.tmx', [((19, 4), 1), ((5, 14), 1), ((28, 19), 0)], [21]),
                          Level('maps/Level2.tmx', [((13, 19), 1), ((27, 12), 1), ((5, 20), 0)], [21]),
                          Level('maps/Level3.tmx', [((10, 14), 1), ((18, 10), 1), ((30, 12), 0)], [21]),
-                         Level('maps/Level4.tmx', [((14, 21), 1), ((26, 9), 1), ((6, 26), 0), ((33, 5), 0)], [21]),
+                         Level('maps/Level4.tmx', [((14, 21), 1), ((26, 9), 1), ((6, 26), 0), ((32, 9), 0)], [21]),
                          Level('maps/Level5.tmx', [((10, 6), 1), ((31, 5), 1), ((32, 11), 1), ((17, 29), 0)], [21]),
                          Level('maps/Level6.tmx', [((2, 26), 0), ((10, 27), 0), ((29, 3), 0), ((19, 15), 1)], [21]),
                          Level('maps/Level7.tmx', [((8, 27), 0), ((23, 2), 0), ((27, 17), 1),
@@ -782,6 +850,7 @@ if __name__ == '__main__':
         level_mode.levels[current_level].enemies_sprites.draw(screen)
         for e in level_mode.levels[current_level].enemies:
             e.gun.enemy_render(e.rect)
+
         pygame.display.update()
         level_mode.render()
         all_sprites.draw(screen)
