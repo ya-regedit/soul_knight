@@ -200,9 +200,8 @@ class Knight(pygame.sprite.Sprite):
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, pos: tuple, hp, image: pygame.image, gun_id):
-        super(Enemy, self).__init__(all_sprites, enemies)
+        super(Enemy, self).__init__(all_sprites, level_mode.levels[current_level].enemies_sprites)
         self.rect = image.get_rect()
-        print(self.rect.w, self.rect.h)
         self.rect.x, self.rect.y = level_mode.levels[level_mode.current_level].get_left_top_pixel_of_cell(pos)
         self.pos = pos
         self.hp = hp
@@ -217,29 +216,20 @@ class Enemy(pygame.sprite.Sprite):
         self.v = level_mode.levels[current_level].tile_size
         self.flag_float = 0
         self.distances = []
+        self.dx, self.dy = 0, 0
 
         self.effect = None
         self.effect_end = 0
-        self.image = image
+        self.image = self.source_image = image
+        self.reversed_image = pygame.transform.flip(image, True, False)
         self.guns = None
         self.gun = None
         self.gun_id = gun_id
 
-        self.frames1 = [load_image('enemy_anim_1.png'),
-                        load_image('enemy_anim_2.png'),
-                        load_image('enemy_anim_3.png'),
-                        load_image('enemy_anim_4.png')]
-        self.reversed_frames1 = [pygame.transform.flip(img, True, False) for img in self.frames1]
-
-        if self.image in self.frames1:
-            self.frames = self.frames1
-            self.reversed_frames = self.reversed_frames1
-        self.cur_frame = 0
-
     def show_gun(self, gun_id):
-        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (10, 5), 0, 10),
+        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (50, 35)), (10, 5), 0, 10),
                      # размеры, сдвиг относительно центра перса, тип патронов, средняя скорость пуль
-                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (50, 20)), (0, -5), 0, 10)]
+                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (40, 20)), (0, -5), 0, 10)]
         self.gun = self.guns[gun_id]
 
     def shoot(self):
@@ -247,7 +237,6 @@ class Enemy(pygame.sprite.Sprite):
 
     def update(self, n_ticks):
         global ticks
-        pygame.draw.rect(screen, 'red', self.rect, 1)
         if not self.reloading:
             self.n_ticks_shoot = n_ticks
             self.reloading = True
@@ -270,43 +259,22 @@ class Enemy(pygame.sprite.Sprite):
         height = level_mode.levels[current_level].height
 
         if self.find_path(r0, c0, r, c):
-            for dr, dc in ((0, -1), (-1, 0), (0, 1), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)):
+            for dr, dc in ((0, -1), (-1, 0), (0, 1), (1, 0)):
                 next_r, next_c = r0 + dr, c0 + dc
                 if (0 <= next_r < height and 0 <= next_c < width and
                         self.distances[next_r][next_c] == self.distances[r0][c0] + 1):
                     if ticks - self.n_ticks_move > self.next_move:
-                        # self.rect = self.rect.move(0.0625 * (self.v * dr), 0.0625 * (self.v * dc))
-                        # self.flag_float += 1
-                        self.rect = self.rect.move(self.v * dr, self.v * dc)
-                        self.moving = False
-                        # if self.flag_float == 30:
-                        #     self.moving = False
-                        #     self.flag_float = 0
-                    break
+                        self.dx, self.dy = 0.0625 * (self.v * dr), 0.0625 * (self.v * dc)
+                        if self.dx > 0:
+                            self.image = self.source_image
+                        elif self.dx < 0:
+                            self.image = self.reversed_image
 
-    def do_animate(self):
-        global animation_frequency
-        if animation_frequency > 10:
-            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
-            if knight_main.rect.center[0] > self.rect.center[0] and self.moving:
-                pass
-
-            elif knight_main.rect.center[0] < self.rect.center[0]:
-                pass
-
-            elif self.dx == 0 and self.dy != 0:
-                if self.image in self.normal_frames:
-                    self.image = self.normal_frames[self.cur_frame]
-                else:
-                    self.image = self.reversed_frames[self.cur_frame]
-            else:
-                try:
-                    if self.image in self.normal_frames or self.image in self.normal_static_frames:
-                        self.image = self.normal_static_frames[self.cur_frame]
-                    else:
-                        self.image = self.reversed_static_frames[self.cur_frame]
-                except IndexError:
-                    self.cur_frame = self.cur_frame % len(self.normal_static_frames)
+                        self.rect = self.rect.move(self.dx, self.dy)
+                        self.flag_float += 1
+                        if self.flag_float == 60:  # отвечает за "длину" шага
+                            self.moving = False
+                            self.flag_float = 0
 
     def find_path(self, r0, c0, r1, c1):
         width = level_mode.levels[current_level].width
@@ -318,13 +286,22 @@ class Enemy(pygame.sprite.Sprite):
             r, c = queue.pop(0)
             if (r, c) == (r1, c1):
                 return True
-            for dr, dc in ((0, -1), (-1, 0), (0, 1), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)):
-                next_r, next_c = r + dr, c + dc
-                if (0 <= next_r < height and 0 <= next_c <= width and
-                        level_mode.levels[current_level].map_arr[next_r][next_c] != -1 and
-                        self.distances[next_r][next_c] == inf):
-                    self.distances[next_r][next_c] = self.distances[r][c] + 1
-                    queue.append((next_r, next_c))
+            if r1 >= r0:
+                priority_x = (1, 0)
+            else:
+                priority_x = (-1, 0)
+            if c1 >= c0:
+                priority_y = (1, 0)
+            else:
+                priority_y = (-1, 0)
+            for dr in priority_x:
+                for dc in priority_y:
+                    next_r, next_c = r + dr, c + dc
+                    if (0 <= next_r < height and 0 <= next_c < width and
+                            level_mode.levels[current_level].map_arr[next_r][next_c] != -1 and
+                            self.distances[next_r][next_c] == inf):
+                        self.distances[next_r][next_c] = self.distances[r][c] + 1
+                        queue.append((next_r, next_c))
         return False
 
     def apply_effect(self, effect, time):
@@ -346,7 +323,7 @@ class EnemyShotguner(Enemy):
 
 
 class EnemyRifler(Enemy):
-    def __init__(self, pos: tuple, hp, image, field, gun_id):
+    def __init__(self, pos: tuple, hp, image, field, gun_id):  # зачем тут field
         super(EnemyRifler, self).__init__(pos, hp, image, gun_id)
         self.field = field
 
@@ -400,14 +377,14 @@ class Level:
             pos = self.tile_size * enemy[0][0], self.tile_size * enemy[0][1]
             if 0 <= enemy[0][0] < self.map.width and 0 <= enemy[0][1] < self.map.height:
                 if enemy[1] == 1:
-                    e.append(EnemyRifler(pos, 10, pygame.transform.scale(load_image('enemy_anim_1.png'), (60, 60)),
+                    e.append(EnemyRifler(pos, 10, pygame.transform.scale(load_image('enemy1.png'), (45, 50)),
                                          'тут будет передача поля', 0))
-                    if enemy[1] == 0:
-                        e.append(
-                            EnemyRifler(pos, 10, pygame.transform.scale(load_image('enemy_anim_1.png'), (60, 60)),
-                                        'тут будет передача поля', 0))
-                    self.enemies_sprites.add(e[-1])
-                    self.enemies = e
+                if enemy[1] == 0:
+                    e.append(
+                        EnemyShotguner(pos, 10, pygame.transform.scale(load_image('enemy1.png'), (45, 50)),
+                                       'тут будет передача поля', 1))
+                self.enemies_sprites.add(e[-1])
+                self.enemies = e
 
     def render(self):
         for x in range(self.width):
@@ -502,9 +479,11 @@ class Gun(pygame.sprite.Sprite):
         if y > center_coords[1]:  # если курсор выше персонажа
             self.angle = -self.angle
         if x > center_coords[0]:  # если курсор правее персонажа
-            self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *center_coords)
+            self.image, self.rect = self.rot_around_center(self.source_img, self.angle,
+                                                           *(center_coords[0], center_coords[1] + 10))
         else:
-            self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *center_coords)
+            self.image, self.rect = self.rot_around_center(self.source_img, self.angle,
+                                                           *(center_coords[0], center_coords[1] + 10))
             self.image = pygame.transform.flip(self.image, True, False)
 
         screen.blit(self.image, self.rect)
@@ -663,13 +642,14 @@ if __name__ == '__main__':
         level_mode.levels[current_level].enemies_sprites.draw(screen)
         for e in level_mode.levels[current_level].enemies:
             e.gun.enemy_render(e.rect)
+
         pygame.display.update()
         level_mode.render()
-        all_sprites.draw(screen)
         ticks += 1
         animation_frequency += 1
+        enemy_animation_frequency += 1
 
         level_mode.levels[current_level].enemies_sprites.update(ticks)
-        # enemies.draw(screen)
+        all_sprites.draw(screen)
         clock.tick(fps)
     pygame.quit()
