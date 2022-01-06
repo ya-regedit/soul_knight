@@ -227,9 +227,9 @@ class Enemy(pygame.sprite.Sprite):
         self.gun_id = gun_id
 
     def show_gun(self, gun_id):
-        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (50, 35)), (10, 5), 0, 10),
+        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (40, 25)), (10, 5), 0, 10),
                      # размеры, сдвиг относительно центра перса, тип патронов, средняя скорость пуль
-                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (40, 20)), (0, -5), 0, 10)]
+                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (40, 15)), (0, -5), 0, 10)]
         self.gun = self.guns[gun_id]
 
     def shoot(self):
@@ -377,11 +377,11 @@ class Level:
             pos = self.tile_size * enemy[0][0], self.tile_size * enemy[0][1]
             if 0 <= enemy[0][0] < self.map.width and 0 <= enemy[0][1] < self.map.height:
                 if enemy[1] == 1:
-                    e.append(EnemyRifler(pos, 10, pygame.transform.scale(load_image('enemy1.png'), (45, 50)),
+                    e.append(EnemyRifler(pos, 10, pygame.transform.scale(load_image('enemy1.png'), (30, 30)),
                                          'тут будет передача поля', 0))
                 if enemy[1] == 0:
                     e.append(
-                        EnemyShotguner(pos, 10, pygame.transform.scale(load_image('enemy1.png'), (45, 50)),
+                        EnemyShotguner(pos, 10, pygame.transform.scale(load_image('enemy1.png'), (30, 30)),
                                        'тут будет передача поля', 1))
                 self.enemies_sprites.add(e[-1])
                 self.enemies = e
@@ -480,10 +480,10 @@ class Gun(pygame.sprite.Sprite):
             self.angle = -self.angle
         if x > center_coords[0]:  # если курсор правее персонажа
             self.image, self.rect = self.rot_around_center(self.source_img, self.angle,
-                                                           *(center_coords[0], center_coords[1] + 10))
+                                                           *(center_coords[0], center_coords[1] + 5))
         else:
             self.image, self.rect = self.rot_around_center(self.source_img, self.angle,
-                                                           *(center_coords[0], center_coords[1] + 10))
+                                                           *(center_coords[0], center_coords[1] + 5))
             self.image = pygame.transform.flip(self.image, True, False)
 
         screen.blit(self.image, self.rect)
@@ -647,7 +647,6 @@ if __name__ == '__main__':
         level_mode.render()
         ticks += 1
         animation_frequency += 1
-        enemy_animation_frequency += 1
 
         level_mode.levels[current_level].enemies_sprites.update(ticks)
         all_sprites.draw(screen)
