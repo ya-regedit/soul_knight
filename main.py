@@ -257,7 +257,6 @@ class Enemy(pygame.sprite.Sprite):
 
         width = level_mode.levels[current_level].width
         height = level_mode.levels[current_level].height
-
         if self.find_path(r0, c0, r, c):
             for dr, dc in ((0, -1), (-1, 0), (0, 1), (1, 0)):
                 next_r, next_c = r0 + dr, c0 + dc
@@ -279,7 +278,7 @@ class Enemy(pygame.sprite.Sprite):
     def find_path(self, r0, c0, r1, c1):
         width = level_mode.levels[current_level].width
         height = level_mode.levels[current_level].height
-        self.distances = [[inf] * width for _ in range(height)]
+        self.distances = [[inf] * height for _ in range(width)]
         self.distances[r0][c0] = 0
         queue = [(r0, c0)]
         while queue:
@@ -608,7 +607,7 @@ if __name__ == '__main__':
     level_mode.levels = [Level('maps/Level1.tmx', [((19, 4), 1), ((5, 14), 1), ((28, 19), 0)], [21]),
                          Level('maps/Level2.tmx', [((13, 19), 1), ((27, 12), 1), ((5, 20), 0)], [21]),
                          Level('maps/Level3.tmx', [((10, 14), 1), ((18, 10), 1), ((30, 12), 0)], [21]),
-                         Level('maps/Level4.tmx', [((14, 21), 1), ((26, 9), 1), ((6, 26), 0), ((33, 5), 0)], [21]),
+                         Level('maps/Level4.tmx', [((14, 21), 1), ((26, 9), 1), ((6, 26), 0), ((32, 9), 0)], [21]),
                          Level('maps/Level5.tmx', [((10, 6), 1), ((31, 5), 1), ((32, 11), 1), ((17, 29), 0)], [21]),
                          Level('maps/Level6.tmx', [((2, 26), 0), ((10, 27), 0), ((29, 3), 0), ((19, 15), 1)], [21]),
                          Level('maps/Level7.tmx', [((8, 27), 0), ((23, 2), 0), ((27, 17), 1),
