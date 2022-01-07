@@ -1,11 +1,9 @@
 import os
-import pprint
 import sys
 
 import pygame
 import pytmx
 import pygame_gui
-
 
 from random import choice
 from copy import copy
@@ -13,7 +11,8 @@ from math import sqrt, degrees, atan, inf
 
 from constants import *
 from UI import manager, show_level_btns, hide_level_btns, show_main_btns, hide_main_btns, \
-    level_mode_btn, hardcore_mode_btn, back_btn, level_btns
+    show_endgame_btns, hide_endgame_btns, to_beginning, to_exit, \
+    level_mode_btn, hardcore_mode_btn, exit_button1, back_btn, level_btns
 
 pygame.init()
 screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
@@ -40,16 +39,24 @@ def load_image(name, colorkey=None):
 
 
 def start_screen():
-    global running, current_level
+    pygame.mixer.music.load('data/music/start_music.mp3')
+    pygame.mixer.music.play(-1)
+    global running, current_level, do_exit
+    show_main_btns()
     hide_level_btns()
+    hide_endgame_btns()
     while running:
         events = pygame.event.get()
         time_delta = clock.tick(fps) / 1000.0
         for event in events:
             if event.type == pygame.QUIT:
                 running = False
+                do_exit = True
             if event.type == pygame.USEREVENT:
                 if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                    if event.ui_element == exit_button1:
+                        running = False
+                        do_exit = True
                     if event.ui_element == level_mode_btn:
                         hide_main_btns()
                         show_level_btns()
@@ -58,10 +65,63 @@ def start_screen():
                         show_main_btns()
                     if event.ui_element in level_btns and event.ui_element != back_btn:
                         current_level = int(event.ui_element.text[-1]) - 1
+                        running = False
+                        do_exit = False
+                        hide_level_btns()
+
+                        pygame.mixer.music.pause()
+                        if current_level in (0, 1, 2):
+                            pygame.mixer.music.load('data/music/first_floor.mp3')
+                        elif current_level in (3, 4, 5):
+                            pygame.mixer.music.load('data/music/second_floor.mp3')
+                        else:
+                            pygame.mixer.music.load('data/music/third_floor.mp3')
+                        pygame.mixer.music.play(-1)
                         return
             manager.process_events(event)
         manager.update(time_delta)
         screen.blit(pygame.transform.scale(load_image('background.png'), (w, h)), (0, 0))
+        manager.draw_ui(screen)
+        pygame.display.flip()
+        clock.tick(fps)
+
+
+def endgame_screen():
+    global running, do_exit, VICTORY, REBOOT_GAME
+    hide_level_btns()
+    hide_main_btns()
+    show_endgame_btns()
+    pygame.mixer.music.stop()
+    if not VICTORY:
+        pygame.mixer.music.load('data/music/end_music.mp3')
+        pygame.mixer.music.play(1)
+    else:
+        pygame.mixer.music.load('data/music/win_music.mp3')
+        pygame.mixer.music.play(1)
+
+    while not do_exit:
+        events = pygame.event.get()
+        time_delta = clock.tick(fps) / 1000.0
+        for event in events:
+            if event.type == pygame.QUIT:
+                running = False
+                do_exit = True
+                return
+            if event.type == pygame.USEREVENT:
+                if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                    if event.ui_element == to_beginning:
+                        REBOOT_GAME = False
+                        start_screen()
+                        return
+                    if event.ui_element == to_exit:
+                        do_exit = True
+                        running = False
+            manager.process_events(event)
+        manager.update(time_delta)
+        if VICTORY:
+            screen.blit(pygame.transform.scale(load_image('win_screen.png'), (w, h)), (0, 0))
+        else:
+            screen.blit(pygame.transform.scale(load_image('gameover_screen.jpg'), (w, h)), (0, 0))
         manager.draw_ui(screen)
         pygame.display.flip()
         clock.tick(fps)
@@ -123,6 +183,7 @@ class Knight(pygame.sprite.Sprite):
                 self.reversed_frames.append(pygame.transform.flip(img, True, False))
 
     def update(self, ev):
+        global running, VICTORY, REBOOT_GAME
         if ev.type == pygame.KEYDOWN:
             if ev.key == pygame.K_LEFT:
                 self.dx -= self.v
@@ -145,11 +206,13 @@ class Knight(pygame.sprite.Sprite):
             self.gun.shoot()
         if self.hp <= 0:
             self.kill()
-            print("Game Over")
+            REBOOT_GAME = True
+            VICTORY = False
 
     def render(self):
         self.show_gun(self.gun_id)
-        self.gun.render()
+        if not REBOOT_GAME:
+            self.gun.render()
 
     def move(self):
         self.next_pos = self.pos[0] + self.dx, self.pos[1] + self.dy
@@ -202,8 +265,7 @@ class Knight(pygame.sprite.Sprite):
                      # размеры, сдвиг относительно центра перса, тип патронов,
                      # средняя скорость пуль, владелец (для пуль), урон
                      # у дробовика размеры, сдвиг, владелец, урон, радиус
-                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (50, 20)), (0, -5), 0, 10, self, 4),
-                     Shotgun(pygame.transform.scale(load_image('Gas_blaster.png', -1),
+                     Shotgun(pygame.transform.scale(load_image('hammer.jpg', -1),
                                                     (50, 20)), (0, -5), self, 10, 100)]
         self.gun = self.guns[gun_id]
 
@@ -241,16 +303,15 @@ class Enemy(pygame.sprite.Sprite):
                      # размеры, сдвиг относительно центра перса, тип патронов,
                      # средняя скорость пуль, владелец (для пуль), урон
                      # у дробовика размеры, сдвиг, владелец, урон, радиус
-                     Gun(pygame.transform.scale(load_image('Gas_blaster.png', -1), (50, 20)), (0, -5), 0, 10, self, 4),
-                     Shotgun(pygame.transform.scale(load_image('Gas_blaster.png', -1),
-                                                    (50, 20)), (0, -5), self, 10, 100)]
+                     Shotgun(pygame.transform.scale(load_image('hammer.jpg', -1),
+                                                    (50, 25)), (0, -10), self, 10, 100)]
         self.gun = self.guns[gun_id]
 
     def shoot(self):
         self.gun.enemy_shoot()
 
     def update(self, n_ticks):
-        global ticks
+        global ticks, VICTORY, REBOOT_GAME
         if not self.reloading:
             self.n_ticks_shoot = n_ticks
             self.reloading = True
@@ -266,9 +327,12 @@ class Enemy(pygame.sprite.Sprite):
             self.shoot()
             self.reloading = False
         if self.hp <= 0:
-            level_mode.levels[level_mode.current_level].enemies.remove(self)
+            level_mode.levels[current_level].enemies.remove(self)
             self.gun.kill()
             self.kill()
+            if not level_mode.levels[current_level].enemies:
+                VICTORY = True
+                REBOOT_GAME = True
 
         r0, c0 = level_mode.levels[current_level].get_cell((self.rect.x, self.rect.y))
         r, c = level_mode.levels[current_level].get_cell((knight_main.rect.x, knight_main.rect.y))
@@ -411,10 +475,9 @@ class Level:
             pos = self.tile_size * enemy[0][0], self.tile_size * enemy[0][1]
             if 0 <= enemy[0][0] < self.map.width and 0 <= enemy[0][1] < self.map.height:
                 if enemy[1] == 1:
-                    e.append(EnemyRifler(pos, 10, image1, 'тут будет передача поля', 2))
+                    e.append(EnemyRifler(pos, 10, image1, 'тут будет передача поля', 0))
                 if enemy[1] == 0:
-
-                    e.append(EnemyRifler(pos, 10, image2, 'тут будет передача поля', 0))
+                    e.append(EnemyRifler(pos, 10, image2, 'тут будет передача поля', 1))
                 self.enemies_sprites.add(e[-1])
         self.enemies = e
 
@@ -662,7 +725,7 @@ class Shotgun(pygame.sprite.Sprite):
         x, y = self.rect.center
         damage_zone = pygame.Rect(x - self.radius, y - self.radius, self.radius * 2, self.radius * 2)
         for enemy in level_mode.levels[level_mode.current_level].enemies:
-            if damage_zone.colliderect(enemy.rect) and enemy != self.owner:
+            if damage_zone.colliderect(enemy.rect) and type(enemy) != type(self.owner):
 
                 distance = (sqrt((x - enemy.rect.center[0]) ** 2 + (y - enemy.rect.center[1]) ** 2) + 1)
                 damage = self.damage * (self.radius - distance) / self.radius
@@ -671,10 +734,12 @@ class Shotgun(pygame.sprite.Sprite):
                     enemy.hp -= damage
                     create_particles(enemy.rect.center)
                     print(damage)
+
         if damage_zone.colliderect(knight_main.rect) and knight_main != self.owner:
 
             distance = (sqrt((x - knight_main.rect.center[0]) ** 2 + (y - knight_main.rect.center[1]) ** 2) + 1)
             damage = self.damage * (self.radius - distance) / self.radius
+
             if damage > 0:
                 knight_main.hp -= damage
                 create_particles(knight_main.rect.center)
@@ -730,7 +795,7 @@ class Bullet(pygame.sprite.Sprite):
             self.kill()
 
         for enemy in level_mode.levels[level_mode.current_level].enemies:
-            if pygame.sprite.collide_mask(enemy, self) and enemy != self.owner:
+            if pygame.sprite.collide_mask(enemy, self) and type(enemy) != type(self.owner):
                 enemy.hp -= self.damage
                 create_particles(enemy.rect.center)
                 self.kill()
@@ -792,73 +857,76 @@ class HardcoreMode:
 
 start_screen()
 if __name__ == '__main__':
-    all_sprites = pygame.sprite.Group()
-    enemies = pygame.sprite.Group()  # это пока будет тут, потом пойдет в класс режима игры
-    bullets = pygame.sprite.Group()
-    particles = pygame.sprite.Group()
+    while not do_exit:
+        all_sprites = pygame.sprite.Group()
+        enemies = pygame.sprite.Group()  # это пока будет тут, потом пойдет в класс режима игры
+        bullets = pygame.sprite.Group()
+        particles = pygame.sprite.Group()
+        fullscreen = True
+        running = True
+        knight_main = Knight((60, 60), 5, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
+        level_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
+        # нажатии на экране кнопки "Режим уровней"
+        level_mode.levels = [Level('maps/Level1.tmx', [((19, 4), 1), ((5, 14), 1), ((28, 19), 0)], [21]),
+                             Level('maps/Level2.tmx', [((13, 19), 1), ((27, 12), 1), ((5, 20), 0)], [21]),
+                             Level('maps/Level3.tmx', [((10, 14), 1), ((18, 10), 1), ((30, 12), 0)], [21]),
+                             Level('maps/Level4.tmx', [((14, 21), 1), ((26, 9), 1), ((6, 26), 0), ((32, 9), 0)], [21]),
+                             Level('maps/Level5.tmx', [((10, 6), 1), ((31, 5), 1), ((32, 11), 1), ((17, 29), 0)], [21]),
+                             Level('maps/Level6.tmx', [((2, 26), 0), ((10, 27), 0), ((29, 3), 0), ((19, 15), 1)], [21]),
+                             Level('maps/Level7.tmx', [((8, 27), 0), ((23, 2), 0), ((27, 17), 1),
+                                                       ((33, 6), 1), ((33, 27), 1), ((12, 2), 0)], [13, 14]),
+                             Level('maps/Level8.tmx', [((13, 12), 1), ((13, 19), 1), ((27, 12), 1),
+                                                       ((27, 19), 1), ((20, 29), 0), ((34, 16), 0)], [13, 14]),
+                             Level('maps/Level9.tmx', [((28, 6), 0), ((34, 10), 1), ((10, 25), 0),
+                                                       ((6, 21), 1), ((25, 15), 0), ((26, 20), 1)], [13, 14])]
 
-    fullscreen = True
-
-    knight_main = Knight((60, 60), 20, load_image('knight.png'), 2)  # выбор оружия выполняется здесь
-
-    level_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
-    # нажатии на экране кнопки "Режим уровней"
-    level_mode.levels = [Level('maps/Level1.tmx', [((19, 4), 1), ((5, 14), 1), ((28, 19), 0)], [21]),
-                         Level('maps/Level2.tmx', [((13, 19), 1), ((27, 12), 1), ((5, 20), 0)], [21]),
-                         Level('maps/Level3.tmx', [((10, 14), 1), ((18, 10), 1), ((30, 12), 0)], [21]),
-                         Level('maps/Level4.tmx', [((14, 21), 1), ((26, 9), 1), ((6, 26), 0), ((32, 9), 0)], [21]),
-                         Level('maps/Level5.tmx', [((10, 6), 1), ((31, 5), 1), ((32, 11), 1), ((17, 29), 0)], [21]),
-                         Level('maps/Level6.tmx', [((2, 26), 0), ((10, 27), 0), ((29, 3), 0), ((19, 15), 1)], [21]),
-                         Level('maps/Level7.tmx', [((8, 27), 0), ((23, 2), 0), ((27, 17), 1),
-                                                   ((33, 6), 1), ((33, 27), 1), ((12, 2), 0)], [13, 14]),
-                         Level('maps/Level8.tmx', [((13, 12), 1), ((13, 19), 1), ((27, 12), 1),
-                                                   ((27, 19), 1), ((20, 29), 0), ((34, 16), 0)], [13, 14]),
-                         Level('maps/Level9.tmx', [((28, 6), 0), ((34, 10), 1), ((10, 25), 0),
-                                                   ((6, 21), 1), ((25, 15), 0), ((26, 20), 1)], [13, 14])]
-
-    tile_size = level_mode.levels[level_mode.current_level].map.tilewidth, \
-                level_mode.levels[level_mode.current_level].map.tileheight
-    level_mode.levels[level_mode.current_level].spawn_enemies(tile_size)
-    for e in level_mode.levels[current_level].enemies:
-        e.show_gun(e.gun_id)
-
-    while running:
-        events = pygame.event.get()
-        for event in events:
-            if event.type == pygame.QUIT:
-                running = False
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 2:
-                print(level_mode.levels[level_mode.current_level].get_cell(event.pos))
-            knight_main.update(event)
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
-                if fullscreen:
-                    screen = pygame.display.set_mode(size)
-                else:
-                    screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
-                fullscreen = not fullscreen
-
-        knight_main.move()
-        knight_main.do_animate()
-
-        bullets.update()
-        bullets.draw(screen)
-
-        knight_main.render()
-
-        particles.update()
-
-        level_mode.levels[current_level].enemies_sprites.draw(screen)
+        tile_size = level_mode.levels[current_level].map.tilewidth, \
+                    level_mode.levels[current_level].map.tileheight
+        level_mode.levels[current_level].spawn_enemies(tile_size)
         for e in level_mode.levels[current_level].enemies:
-            e.gun.enemy_render(e.rect)
+            e.show_gun(e.gun_id)
 
-        pygame.display.update()
-        level_mode.render()
-        all_sprites.draw(screen)
-        particles.draw(screen)
-        ticks += 1
-        animation_frequency += 1
+        while running:
+            if not REBOOT_GAME:
+                events = pygame.event.get()
+                for event in events:
+                    if event.type == pygame.QUIT:
+                        running = False
+                        do_exit = True
+                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 2:
+                        print(level_mode.levels[level_mode.current_level].get_cell(event.pos))
+                    knight_main.update(event)
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
+                        if fullscreen:
+                            screen = pygame.display.set_mode(size)
+                        else:
+                            screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
+                        fullscreen = not fullscreen
 
-        level_mode.levels[current_level].enemies_sprites.update(ticks)
-        # enemies.draw(screen)
-        clock.tick(fps)
+                knight_main.move()
+                knight_main.do_animate()
+
+                bullets.update()
+                bullets.draw(screen)
+
+                knight_main.render()
+
+                particles.update()
+
+                level_mode.levels[current_level].enemies_sprites.draw(screen)
+                for e in level_mode.levels[current_level].enemies:
+                    e.gun.enemy_render(e.rect)
+
+                pygame.display.update()
+                level_mode.render()
+                all_sprites.draw(screen)
+                particles.draw(screen)
+                ticks += 1
+                animation_frequency += 1
+
+                level_mode.levels[current_level].enemies_sprites.update(ticks)
+                clock.tick(fps)
+            else:
+                endgame_screen()
+                continue
     pygame.quit()

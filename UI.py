@@ -9,6 +9,8 @@ level_mode_btn = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(70.0, 70
                                               text='Режим прохождения уровней', manager=manager)
 hardcore_mode_btn = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(330.0, 700.0, 210.0, 75.0),
                                                  text='Режим hardcore', manager=manager)
+exit_button1 = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(1040.0, 0, 190.0, 50.0),
+                                            text='Выйти из игры', manager=manager)
 back_btn = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(70.0, 700.0, 210.0, 75.0),
                                         text='<-- Назад <--', manager=manager)
 level1 = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(70.0, 300.0, 100.0, 100.0),
@@ -31,6 +33,12 @@ level9 = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(310.0, 540.0, 10
                                       text='Уровень 9', manager=manager)
 level_btns = [level1, level2, level3, level4, level5, level6, level7, level8, level9, back_btn]
 
+to_beginning = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(365.0, 720.0, 210.0, 75.0),
+                                            text='Вернуться в начало', manager=manager)
+to_exit = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(625.0, 720.0, 210.0, 75.0),
+                                       text='Выйти из игры', manager=manager)
+endgame_btns = [to_beginning, to_exit]
+
 
 def show_level_btns():
     for btn in level_btns:
@@ -45,8 +53,20 @@ def hide_level_btns():
 def show_main_btns():
     level_mode_btn.show()
     hardcore_mode_btn.show()
+    exit_button1.show()
 
 
 def hide_main_btns():
     level_mode_btn.hide()
     hardcore_mode_btn.hide()
+    exit_button1.hide()
+
+
+def show_endgame_btns():
+    for btn in endgame_btns:
+        btn.show()
+
+
+def hide_endgame_btns():
+    for btn in endgame_btns:
+        btn.hide()
