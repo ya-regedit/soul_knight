@@ -40,6 +40,7 @@ def load_image(name, colorkey=None):
 
 def start_screen():
     pygame.mixer.music.load('data/music/start_music.mp3')
+    pygame.mixer.music.set_volume(0.2)
     pygame.mixer.music.play(-1)
     global running, current_level, do_exit
     show_main_btns()
@@ -69,7 +70,7 @@ def start_screen():
                         do_exit = False
                         hide_level_btns()
 
-                        pygame.mixer.music.pause()
+                        pygame.mixer.music.fadeout(1000)
                         if current_level in (0, 1, 2):
                             pygame.mixer.music.load('data/music/first_floor.mp3')
                         elif current_level in (3, 4, 5):
@@ -78,6 +79,7 @@ def start_screen():
                             pygame.mixer.music.load('data/music/third_floor.mp3')
                         pygame.mixer.music.play(-1)
                         return
+
             manager.process_events(event)
         manager.update(time_delta)
         screen.blit(pygame.transform.scale(load_image('background.png'), (w, h)), (0, 0))
@@ -91,7 +93,7 @@ def endgame_screen():
     hide_level_btns()
     hide_main_btns()
     show_endgame_btns()
-    pygame.mixer.music.stop()
+    pygame.mixer.music.fadeout(1000)
     if not VICTORY:
         pygame.mixer.music.load('data/music/end_music.mp3')
         pygame.mixer.music.play(1)
@@ -168,6 +170,7 @@ class Knight(pygame.sprite.Sprite):
         self.gun_id = gun_id
         self.guns = None
         self.gun = None
+        self.show_gun(self.gun_id)
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(self.pos[0], self.pos[1], sheet.get_width() // columns - 5,
@@ -182,7 +185,7 @@ class Knight(pygame.sprite.Sprite):
                     frame_location, self.rect.size))
                 self.reversed_frames.append(pygame.transform.flip(img, True, False))
 
-    def update(self, ev):
+    def update(self, ev, ticks):
         global running, VICTORY, REBOOT_GAME
         if ev.type == pygame.KEYDOWN:
             if ev.key == pygame.K_LEFT:
@@ -203,16 +206,15 @@ class Knight(pygame.sprite.Sprite):
             elif ev.key == pygame.K_DOWN:
                 self.dy -= self.v
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
-            self.gun.shoot()
+            self.gun.shoot(ticks)
         if self.hp <= 0:
             self.kill()
             REBOOT_GAME = True
             VICTORY = False
 
-    def render(self):
-        self.show_gun(self.gun_id)
+    def render(self, ticks):
         if not REBOOT_GAME:
-            self.gun.render()
+            self.gun.render(ticks)
 
     def move(self):
         self.next_pos = self.pos[0] + self.dx, self.pos[1] + self.dy
@@ -266,7 +268,7 @@ class Knight(pygame.sprite.Sprite):
                      # средняя скорость пуль, владелец (для пуль), урон
                      # у дробовика размеры, сдвиг, владелец, урон, радиус
                      Shotgun(pygame.transform.scale(load_image('hammer.jpg', -1),
-                                                    (50, 20)), (0, -5), self, 10, 100)]
+                                                    (75, 30)), (5, 10), self, 10, 100)]
         self.gun = self.guns[gun_id]
 
 
@@ -297,6 +299,7 @@ class Enemy(pygame.sprite.Sprite):
         self.guns = None
         self.gun = None
         self.gun_id = gun_id
+        self.show_gun(self.gun_id)
 
     def show_gun(self, gun_id):
         self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (5, 5), 0, 10, self, 2),
@@ -304,11 +307,11 @@ class Enemy(pygame.sprite.Sprite):
                      # средняя скорость пуль, владелец (для пуль), урон
                      # у дробовика размеры, сдвиг, владелец, урон, радиус
                      Shotgun(pygame.transform.scale(load_image('hammer.jpg', -1),
-                                                    (50, 25)), (0, -10), self, 10, 100)]
+                                                    (50, 25)), (20, 20), self, 10, 100)]
         self.gun = self.guns[gun_id]
 
-    def shoot(self):
-        self.gun.enemy_shoot()
+    def shoot(self, ticks):
+        self.gun.enemy_shoot(ticks)
 
     def update(self, n_ticks):
         global ticks, VICTORY, REBOOT_GAME
@@ -324,7 +327,7 @@ class Enemy(pygame.sprite.Sprite):
             self.effect = None
 
         if ticks - self.n_ticks_shoot > self.next_shot:
-            self.shoot()
+            self.shoot(ticks)
             self.reloading = False
         if self.hp <= 0:
             level_mode.levels[current_level].enemies.remove(self)
@@ -392,9 +395,8 @@ class Enemy(pygame.sprite.Sprite):
     def get_damage(self):
         pass
 
-    def render(self):
-        self.show_gun(self.gun_id)
-        self.gun.enemy_render()
+    def render(self, ticks):
+        self.gun.enemy_render(self.rect, ticks)
 
 
 class EnemyShotguner(Enemy):
@@ -497,8 +499,8 @@ class Gun(pygame.sprite.Sprite):
         super(Gun, self).__init__()
         self.shift_x, self.shift_y = shift
         self.image = self.source_img = img
-        self.rect = pygame.rect.Rect(knight_main.rect.center[0] - self.shift_x,
-                                     knight_main.rect.center[1] - self.shift_y,
+        self.rect = pygame.rect.Rect(owner.rect.center[0] - self.shift_x,
+                                     owner.rect.center[1] - self.shift_y,
                                      self.image.get_width(), self.image.get_height())
         self.last_image = None
         self.angle = None
@@ -516,7 +518,10 @@ class Gun(pygame.sprite.Sprite):
         new_rect = rotated_image.get_rect(center=image.get_rect(center=(x, y)).center)
         return rotated_image, new_rect
 
-    def render(self):
+    def render(self, ticks):
+        self.rect = pygame.rect.Rect(self.owner.rect.center[0] - self.shift_x,
+                                     self.owner.rect.center[1] - self.shift_y,
+                                     self.image.get_width(), self.image.get_height())
         if pygame.mouse.get_focused():
             mouse_pos = pygame.mouse.get_pos()
             center_coords = knight_main.rect.center
@@ -563,7 +568,7 @@ class Gun(pygame.sprite.Sprite):
                 self.rect.x -= 40
         screen.blit(self.image, self.rect)
 
-    def enemy_render(self, rect: pygame.Rect):
+    def enemy_render(self, rect: pygame.Rect, ticks):
         center_coords = rect.center
         x, y = knight_main.rect.center
         self.adjacent_cathet = sqrt((x - center_coords[0]) ** 2)
@@ -585,7 +590,7 @@ class Gun(pygame.sprite.Sprite):
 
         screen.blit(self.image, self.rect)
 
-    def shoot(self):
+    def shoot(self, ticks):
         mouse_pos = pygame.mouse.get_pos()
 
         right = True if mouse_pos[0] > knight_main.rect.center[0] else False
@@ -608,7 +613,7 @@ class Gun(pygame.sprite.Sprite):
                 bullet.image, bullet.rect = self.rot_around_center(bullet.image, self.angle, *bullet.rect.center)
             screen.blit(bullet.image, bullet.rect)
 
-    def enemy_shoot(self):
+    def enemy_shoot(self, ticks):
         x, y = knight_main.rect.center
 
         right = True if x > self.owner.rect.center[0] else False
@@ -637,8 +642,8 @@ class Shotgun(pygame.sprite.Sprite):
         super(Shotgun, self).__init__()
         self.shift_x, self.shift_y = shift
         self.image = self.source_img = img
-        self.rect = pygame.rect.Rect(knight_main.rect.center[0] - self.shift_x,
-                                     knight_main.rect.center[1] - self.shift_y,
+        self.rect = pygame.rect.Rect(owner.rect.center[0] - self.shift_x,
+                                     owner.rect.center[1] - self.shift_y,
                                      self.image.get_width(), self.image.get_height())
         self.last_image = None
         self.angle = None
@@ -648,13 +653,16 @@ class Shotgun(pygame.sprite.Sprite):
         self.owner = owner
         self.damage = damage
         self.radius = radius
+        self.angle = 65
+        self.angle_status = 0  # 0 - остаётся, 1 - наклоняется к полу, 2 - поднимается от пола
+        self.next_angle_iter_tick = 0
 
     def rot_around_center(self, image, angle, x, y):
         rotated_image = pygame.transform.rotate(image, angle)
         new_rect = rotated_image.get_rect(center=image.get_rect(center=(x - 5, y)).center)
         return rotated_image, new_rect
 
-    def render(self):
+    def render(self, ticks):
         if pygame.mouse.get_focused():
             mouse_pos = pygame.mouse.get_pos()
             center_coords = knight_main.rect.center
@@ -662,13 +670,16 @@ class Shotgun(pygame.sprite.Sprite):
             self.adjacent_cathet = sqrt((mouse_pos[0] - center_coords[0]) ** 2)
             self.opposite_cathet = sqrt((mouse_pos[1] - center_coords[1]) ** 2)
 
-            if self.adjacent_cathet != 0:
-                self.angle = degrees(atan(self.opposite_cathet / self.adjacent_cathet))
-            else:
-                self.angle = 90
-
-            if mouse_pos[1] > center_coords[1]:  # если курсор выше персонажа
-                self.angle = -self.angle
+            if self.angle_status != 0 and ticks >= self.next_angle_iter_tick:
+                self.next_angle_iter_tick = ticks + 1
+                if self.angle_status == 1:
+                    self.angle -= 2
+                    if self.angle <= 0:
+                        self.angle_status = 2
+                elif self.angle_status == 2:
+                    self.angle += 2
+                    if self.angle >= 65:
+                        self.angle_status = 0
 
             if mouse_pos[0] > center_coords[0]:  # если курсор правее персонажа
                 if knight_main.dx == 0 and knight_main.dy == 0:  # если персонаж стоит на месте
@@ -679,7 +690,7 @@ class Shotgun(pygame.sprite.Sprite):
                 self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *self.rect.center)
 
                 knight_main.direction_of_vision['Right'], \
-                knight_main.direction_of_vision['Left'] = True, False
+                    knight_main.direction_of_vision['Left'] = True, False
 
             else:
                 if knight_main.dx == 0 and knight_main.dy == 0:
@@ -689,30 +700,33 @@ class Shotgun(pygame.sprite.Sprite):
 
                 self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *self.rect.center)
                 self.image = pygame.transform.flip(self.image, True, False)
-                self.rect.x -= 40
                 knight_main.direction_of_vision['Right'], \
-                knight_main.direction_of_vision['Left'] = False, True
+                    knight_main.direction_of_vision['Left'] = False, True
 
         else:
             if knight_main.direction_of_vision['Right']:
                 self.image = self.source_img
             else:
                 self.image = pygame.transform.flip(self.source_img, True, False)
-                self.rect.x -= 40
         screen.blit(self.image, self.rect)
 
-    def enemy_render(self, rect: pygame.Rect):
+    def enemy_render(self, rect: pygame.Rect, ticks):
         center_coords = rect.center
         x, y = knight_main.rect.center
         self.adjacent_cathet = sqrt((x - center_coords[0]) ** 2)
         self.opposite_cathet = sqrt((y - center_coords[1]) ** 2)
 
-        if self.adjacent_cathet != 0:
-            self.angle = degrees(atan(self.opposite_cathet / self.adjacent_cathet))
-        else:
-            self.angle = 90
-        if y > center_coords[1]:  # если курсор выше персонажа
-            self.angle = -self.angle
+        if self.angle_status != 0 and ticks >= self.next_angle_iter_tick:
+            self.next_angle_iter_tick = ticks + 1
+            if self.angle_status == 1:
+                self.angle -= 2
+                if self.angle <= 0:
+                    self.angle_status = 2
+            elif self.angle_status == 2:
+                self.angle += 2
+                if self.angle >= 65:
+                    self.angle_status = 0
+
         if x > center_coords[0]:  # если курсор правее персонажа
             self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *center_coords)
         else:
@@ -721,9 +735,11 @@ class Shotgun(pygame.sprite.Sprite):
 
         screen.blit(self.image, self.rect)
 
-    def shoot(self):
+    def shoot(self, ticks):
         x, y = self.rect.center
         damage_zone = pygame.Rect(x - self.radius, y - self.radius, self.radius * 2, self.radius * 2)
+        self.angle_status = 1
+        damage_zones.add(DamageZone((x, y), self.radius, ticks, 200))
         for enemy in level_mode.levels[level_mode.current_level].enemies:
             if damage_zone.colliderect(enemy.rect) and type(enemy) != type(self.owner):
 
@@ -745,8 +761,8 @@ class Shotgun(pygame.sprite.Sprite):
                 create_particles(knight_main.rect.center)
                 print(damage)
 
-    def enemy_shoot(self):
-        self.shoot()
+    def enemy_shoot(self, ticks):
+        self.shoot(ticks)
 
 
 class Bullet(pygame.sprite.Sprite):
@@ -834,6 +850,19 @@ class Particle(pygame.sprite.Sprite):
             self.kill()
 
 
+class DamageZone(pygame.sprite.Sprite):
+    def __init__(self, pos, radius, tick, lifetime):
+        super().__init__(all_sprites)
+        self.image = pygame.transform.scale(load_image('hammer_shot.png', -1), (radius, radius))
+        self.rect = pygame.rect.Rect(pos[0] - radius // 2, pos[1] - radius // 2, radius, radius)
+        self.spawn_tick = tick
+        self.death_tick = tick + lifetime
+
+    def update(self, ticks):
+        if ticks > self.death_tick:
+            self.kill()
+
+
 def create_particles(position):
     particle_count = 5
     numbers = range(-5, 6)
@@ -862,6 +891,7 @@ if __name__ == '__main__':
         enemies = pygame.sprite.Group()  # это пока будет тут, потом пойдет в класс режима игры
         bullets = pygame.sprite.Group()
         particles = pygame.sprite.Group()
+        damage_zones = pygame.sprite.Group()
         fullscreen = True
         running = True
         knight_main = Knight((60, 60), 5, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
@@ -895,7 +925,7 @@ if __name__ == '__main__':
                         do_exit = True
                     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 2:
                         print(level_mode.levels[level_mode.current_level].get_cell(event.pos))
-                    knight_main.update(event)
+                    knight_main.update(event, ticks)
                     if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
                         if fullscreen:
                             screen = pygame.display.set_mode(size)
@@ -909,18 +939,22 @@ if __name__ == '__main__':
                 bullets.update()
                 bullets.draw(screen)
 
-                knight_main.render()
+                damage_zones.update(ticks)
+
+                knight_main.render(ticks)
 
                 particles.update()
 
                 level_mode.levels[current_level].enemies_sprites.draw(screen)
                 for e in level_mode.levels[current_level].enemies:
-                    e.gun.enemy_render(e.rect)
+                    e.render(ticks)
 
                 pygame.display.update()
                 level_mode.render()
                 all_sprites.draw(screen)
                 particles.draw(screen)
+                damage_zones.draw(screen)
+
                 ticks += 1
                 animation_frequency += 1
 
