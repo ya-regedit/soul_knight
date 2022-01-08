@@ -170,6 +170,7 @@ class Knight(pygame.sprite.Sprite):
         self.guns = None
         self.gun = None
         self.show_gun(self.gun_id)
+        self.hp_bar = HpBar(self, self.hp)
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(self.pos[0], self.pos[1], sheet.get_width() // columns - 5,
@@ -214,6 +215,7 @@ class Knight(pygame.sprite.Sprite):
     def render(self, ticks):
         if not REBOOT_GAME:
             self.gun.render(ticks)
+            self.hp_bar.render(screen)
 
     def move(self):
         self.next_pos = self.pos[0] + self.dx, self.pos[1] + self.dy
@@ -267,7 +269,7 @@ class Knight(pygame.sprite.Sprite):
                      # средняя скорость пуль, владелец (для пуль), урон
                      # у дробовика размеры, сдвиг, владелец, урон, радиус
                      Shotgun(pygame.transform.scale(load_image('hammer.jpg', -1),
-                                                    (75, 30)), (5, 10), self, 10, 100)]
+                                                    (75, 30)), (20, 20), self, 10, 100)]
         self.gun = self.guns[gun_id]
 
 
@@ -299,9 +301,10 @@ class Enemy(pygame.sprite.Sprite):
         self.gun = None
         self.gun_id = gun_id
         self.show_gun(self.gun_id)
+        self.hp_bar = HpBar(self, self.hp)
 
     def show_gun(self, gun_id):
-        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (5, 5), 0, 10, self, 2),
+        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (40, 30)), (5, 5), 0, 10, self, 2),
                      # размеры, сдвиг относительно центра перса, тип патронов,
                      # средняя скорость пуль, владелец (для пуль), урон
                      # у дробовика размеры, сдвиг, владелец, урон, радиус
@@ -396,6 +399,7 @@ class Enemy(pygame.sprite.Sprite):
 
     def render(self, ticks):
         self.gun.enemy_render(self.rect, ticks)
+        self.hp_bar.render(screen)
 
 
 class EnemyShotguner(Enemy):
@@ -405,7 +409,7 @@ class EnemyShotguner(Enemy):
 
 
 class EnemyRifler(Enemy):
-    def __init__(self, pos: tuple, hp, image, field, gun_id):  # зачем тут field
+    def __init__(self, pos: tuple, hp, image, field, gun_id):
         super(EnemyRifler, self).__init__(pos, hp, image, gun_id)
         self.field = field
 
@@ -478,7 +482,7 @@ class Level:
                 if enemy[1] == 1:
                     e.append(EnemyRifler(pos, 10, image1, 'тут будет передача поля', 0))
                 if enemy[1] == 0:
-                    e.append(EnemyRifler(pos, 10, image2, 'тут будет передача поля', 1))
+                    e.append(EnemyShotguner(pos, 10, image2, 'тут будет передача поля', 1))
                 self.enemies_sprites.add(e[-1])
         self.enemies = e
 
@@ -877,6 +881,20 @@ class DamageZone(pygame.sprite.Sprite):
             self.kill()
 
 
+class HpBar:
+    def __init__(self, owner, max_hp):
+        self.owner = owner
+        self.max_hp = max_hp
+
+    def render(self, screen):
+        red_rect = pygame.Rect(self.owner.rect.x, self.owner.rect.y - 20, self.owner.rect.w, 5)
+        green_rect = pygame.Rect(self.owner.rect.x, self.owner.rect.y - 20,
+                                 self.owner.rect.w * self.owner.hp // self.max_hp, 5)
+
+        pygame.draw.rect(screen, 'red', red_rect)
+        pygame.draw.rect(screen, 'green', green_rect)
+
+
 def create_particles(position):
     particle_count = 5
     numbers = range(-5, 6)
@@ -908,7 +926,7 @@ if __name__ == '__main__':
         damage_zones = pygame.sprite.Group()
         fullscreen = True
         running = True
-        knight_main = Knight((60, 60), 5, load_image('knight.png'), 1)  # выбор оружия выполняется здесь
+        knight_main = Knight((60, 60), 5, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
         level_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
         # нажатии на экране кнопки "Режим уровней"
         level_mode.levels = [Level('maps/Level1.tmx', [((19, 4), 1), ((5, 14), 1), ((28, 19), 0)], [21]),
