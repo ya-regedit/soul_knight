@@ -19,6 +19,7 @@ screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
 screen_rect = pygame.Rect(0, 0, *size)
 pygame.display.set_caption('Soul Knight')
 clock = pygame.time.Clock()
+pygame.mixer.music.set_volume(VOLUME)
 
 
 def load_image(name, colorkey=None):
@@ -40,7 +41,6 @@ def load_image(name, colorkey=None):
 
 def start_screen():
     pygame.mixer.music.load('data/music/start_music.mp3')
-    pygame.mixer.music.set_volume(0.2)
     pygame.mixer.music.play(-1)
     global running, current_level, do_exit
     show_main_btns()
@@ -96,10 +96,9 @@ def endgame_screen():
     pygame.mixer.music.fadeout(1000)
     if not VICTORY:
         pygame.mixer.music.load('data/music/end_music.mp3')
-        pygame.mixer.music.play(1)
     else:
         pygame.mixer.music.load('data/music/win_music.mp3')
-        pygame.mixer.music.play(1)
+    pygame.mixer.music.play(-1)
 
     while not do_exit:
         events = pygame.event.get()
@@ -512,6 +511,7 @@ class Gun(pygame.sprite.Sprite):
         self.opposite_cathet = 0
         self.owner = owner
         self.damage = damage
+        self.old_owner_rect = self.owner.rect
 
     def rot_around_center(self, image, angle, x, y):
         rotated_image = pygame.transform.rotate(image, angle)
@@ -519,6 +519,10 @@ class Gun(pygame.sprite.Sprite):
         return rotated_image, new_rect
 
     def render(self, ticks):
+        move_x, move_y = self.old_owner_rect.x - self.owner.rect.x, self.old_owner_rect.y - self.owner.rect.y
+        self.rect.x -= move_x
+        self.rect.y -= move_y
+        self.old_owner_rect = self.owner.rect
         if pygame.mouse.get_focused():
             mouse_pos = pygame.mouse.get_pos()
             center_coords = knight_main.rect.center
@@ -535,6 +539,8 @@ class Gun(pygame.sprite.Sprite):
                 self.angle = -self.angle
 
             if mouse_pos[0] > center_coords[0]:  # если курсор правее персонажа
+                if knight_main.direction_of_vision['Left']:
+                    self.rect.x += 40
                 if knight_main.dx == 0 and knight_main.dy == 0:  # если персонаж стоит на месте
                     knight_main.image = knight_main.normal_static_frames[knight_main.cur_frame]
                 else:
@@ -553,7 +559,8 @@ class Gun(pygame.sprite.Sprite):
 
                 self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *self.rect.center)
                 self.image = pygame.transform.flip(self.image, True, False)
-                self.rect.x -= 40
+                if knight_main.direction_of_vision['Right']:
+                    self.rect.x -= 40
                 knight_main.direction_of_vision['Right'], \
                 knight_main.direction_of_vision['Left'] = False, True
 
@@ -653,13 +660,19 @@ class Shotgun(pygame.sprite.Sprite):
         self.angle = 65
         self.angle_status = 0  # 0 - остаётся, 1 - наклоняется к полу, 2 - поднимается от пола
         self.next_angle_iter_tick = 0
+        self.old_owner_rect = self.owner.rect
 
     def rot_around_center(self, image, angle, x, y):
         rotated_image = pygame.transform.rotate(image, angle)
-        new_rect = rotated_image.get_rect(center=image.get_rect(center=(x - 5, y)).center)
+        new_rect = rotated_image.get_rect(center=image.get_rect(center=(x, y)).center)
         return rotated_image, new_rect
 
     def render(self, ticks):
+        move_x, move_y = self.old_owner_rect.x - self.owner.rect.x, self.old_owner_rect.y - self.owner.rect.y
+        self.rect.x -= move_x
+        self.rect.y -= move_y
+        self.old_owner_rect = self.owner.rect
+
         if pygame.mouse.get_focused():
             mouse_pos = pygame.mouse.get_pos()
             center_coords = knight_main.rect.center
@@ -679,6 +692,8 @@ class Shotgun(pygame.sprite.Sprite):
                         self.angle_status = 0
 
             if mouse_pos[0] > center_coords[0]:  # если курсор правее персонажа
+                if knight_main.direction_of_vision['Left']:
+                    self.rect.x += 40
                 if knight_main.dx == 0 and knight_main.dy == 0:  # если персонаж стоит на месте
                     knight_main.image = knight_main.normal_static_frames[knight_main.cur_frame]
                 else:
@@ -690,6 +705,8 @@ class Shotgun(pygame.sprite.Sprite):
                     knight_main.direction_of_vision['Left'] = True, False
 
             else:
+                if knight_main.direction_of_vision['Right']:
+                    self.rect.x -= 40
                 if knight_main.dx == 0 and knight_main.dy == 0:
                     knight_main.image = knight_main.reversed_static_frames[knight_main.cur_frame]
                 else:
@@ -891,7 +908,7 @@ if __name__ == '__main__':
         damage_zones = pygame.sprite.Group()
         fullscreen = True
         running = True
-        knight_main = Knight((60, 60), 5, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
+        knight_main = Knight((60, 60), 5, load_image('knight.png'), 1)  # выбор оружия выполняется здесь
         level_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
         # нажатии на экране кнопки "Режим уровней"
         level_mode.levels = [Level('maps/Level1.tmx', [((19, 4), 1), ((5, 14), 1), ((28, 19), 0)], [21]),
