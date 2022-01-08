@@ -519,9 +519,6 @@ class Gun(pygame.sprite.Sprite):
         return rotated_image, new_rect
 
     def render(self, ticks):
-        self.rect = pygame.rect.Rect(self.owner.rect.center[0] - self.shift_x,
-                                     self.owner.rect.center[1] - self.shift_y,
-                                     self.image.get_width(), self.image.get_height())
         if pygame.mouse.get_focused():
             mouse_pos = pygame.mouse.get_pos()
             center_coords = knight_main.rect.center
@@ -925,13 +922,13 @@ if __name__ == '__main__':
                         do_exit = True
                     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 2:
                         print(level_mode.levels[level_mode.current_level].get_cell(event.pos))
-                    knight_main.update(event, ticks)
                     if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
                         if fullscreen:
                             screen = pygame.display.set_mode(size)
                         else:
                             screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
                         fullscreen = not fullscreen
+                    knight_main.update(event, ticks)
 
                 knight_main.move()
                 knight_main.do_animate()
