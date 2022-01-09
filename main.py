@@ -5,14 +5,14 @@ import pygame
 import pytmx
 import pygame_gui
 
-from random import choice
+from random import choice, randint
 from copy import copy
 from math import sqrt, degrees, atan, inf
 
 from constants import *
 from UI import manager, show_level_btns, hide_level_btns, show_main_btns, hide_main_btns, \
     show_endgame_btns, hide_endgame_btns, to_beginning, to_exit, \
-    level_mode_btn, hardcore_mode_btn, exit_button1, back_btn, level_btns
+    level_mode_btn, hardcore_mode_btn, exit_button1, back_btn, level_btns, esc_window
 
 pygame.init()
 screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
@@ -40,12 +40,15 @@ def load_image(name, colorkey=None):
 
 
 def start_screen():
+    global running, current_level, do_exit, mode, current_mode
     pygame.mixer.music.load('data/music/start_music.mp3')
     pygame.mixer.music.play(-1)
-    global running, current_level, do_exit
+
     show_main_btns()
     hide_level_btns()
     hide_endgame_btns()
+    star_image = pygame.transform.scale(load_image('star.png', -1), (33, 33.3))
+    show_stars = False
     while running:
         events = pygame.event.get()
         time_delta = clock.tick(fps) / 1000.0
@@ -61,9 +64,12 @@ def start_screen():
                     if event.ui_element == level_mode_btn:
                         hide_main_btns()
                         show_level_btns()
+                        mode = 0
+                        show_stars = True
                     if event.ui_element == back_btn:
                         hide_level_btns()
                         show_main_btns()
+                        show_stars = False
                     if event.ui_element in level_btns and event.ui_element != back_btn:
                         current_level = int(event.ui_element.text[-1]) - 1
                         running = False
@@ -79,53 +85,109 @@ def start_screen():
                             pygame.mixer.music.load('data/music/third_floor.mp3')
                         pygame.mixer.music.play(-1)
                         return
+                    if event.ui_element == hardcore_mode_btn:
+                        hide_main_btns()
+                        mode = 1
+                        return
 
             manager.process_events(event)
         manager.update(time_delta)
         screen.blit(pygame.transform.scale(load_image('background.png'), (w, h)), (0, 0))
+        if mode == 0 and show_stars:
+            with open('scores/levels_score.txt', 'r') as file:
+                scores = {}
+                for string in file.readlines():
+                    key, val = string.strip().split(':')
+                    scores[key] = val
+            for key, val in scores.items():
+                key, val = int(key), int(val)
+                for i in range(int(val)):
+                    screen.blit(star_image, (
+                        70 + max((key % 3), 0) * 100 + max((key % 3), 0) * 40 - star_image.get_width(),
+                        (300 + 100 * (key // 3) + 20 * (key // 3)) + 33.3 * i))
         manager.draw_ui(screen)
         pygame.display.flip()
         clock.tick(fps)
 
 
 def endgame_screen():
-    global running, do_exit, VICTORY, REBOOT_GAME
-    hide_level_btns()
-    hide_main_btns()
-    show_endgame_btns()
-    pygame.mixer.music.fadeout(1000)
-    if not VICTORY:
-        pygame.mixer.music.load('data/music/end_music.mp3')
-    else:
-        pygame.mixer.music.load('data/music/win_music.mp3')
-    pygame.mixer.music.play(-1)
-
-    while not do_exit:
-        events = pygame.event.get()
-        time_delta = clock.tick(fps) / 1000.0
-        for event in events:
-            if event.type == pygame.QUIT:
-                running = False
-                do_exit = True
-                return
-            if event.type == pygame.USEREVENT:
-                if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
-                    if event.ui_element == to_beginning:
-                        REBOOT_GAME = False
-                        start_screen()
-                        return
-                    if event.ui_element == to_exit:
-                        do_exit = True
-                        running = False
-            manager.process_events(event)
-        manager.update(time_delta)
-        if VICTORY:
-            screen.blit(pygame.transform.scale(load_image('win_screen.png'), (w, h)), (0, 0))
+    global running, do_exit, victory, reboot_game, knight_main, MAX_HP
+    if mode == 0 and victory:
+        hp_left_in_percents = (knight_main.hp / MAX_HP) * 100
+        if hp_left_in_percents > 80:
+            stars = '3'
+        elif 50 < hp_left_in_percents < 80:
+            stars = '2'
         else:
-            screen.blit(pygame.transform.scale(load_image('gameover_screen.jpg'), (w, h)), (0, 0))
-        manager.draw_ui(screen)
-        pygame.display.flip()
-        clock.tick(fps)
+            stars = '1'
+        with open('scores/levels_score.txt', 'r') as file:
+            scores = {}
+            for string in file.readlines():
+                key, val = string.strip().split(':')
+                scores[key] = val
+        with open('scores/levels_score.txt', 'w') as file:
+            if int(scores.get(str(current_level), 0)) < int(stars):
+                scores[str(current_level)] = stars
+            scores = sorted(scores.items())
+            for key, val in scores:
+                file.write('{}:{}\n'.format(key, val))
+
+    if mode == 1 and not victory:
+        print(current_mode.current_score, current_mode.best_score)
+        if current_mode.current_score > current_mode.best_score:
+            with open('scores/hardcore_score.txt', 'w') as file:
+                file.write(str(round(current_mode.current_score)))
+            print(current_mode.current_score)
+
+    if not victory:
+        pygame.mixer.music.fadeout(1000)
+        pygame.mixer.music.load('data/music/end_music.mp3')
+        pygame.mixer.music.play(1)
+    elif victory and mode == 0:
+        pygame.mixer.music.fadeout(1000)
+        pygame.mixer.music.load('data/music/win_music.mp3')
+        pygame.mixer.music.play(1)
+    if not victory or (victory and mode == 0):
+        hide_level_btns()
+        hide_main_btns()
+        show_endgame_btns()
+        while not do_exit:
+            events = pygame.event.get()
+            time_delta = clock.tick(fps) / 1000.0
+            for event in events:
+                if event.type == pygame.QUIT:
+                    running = False
+                    do_exit = True
+                    return
+                if event.type == pygame.USEREVENT:
+                    if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                        if event.ui_element == to_beginning:
+                            reboot_game = False
+                            start_screen()
+                            return
+                        if event.ui_element == to_exit:
+                            do_exit = True
+                            running = False
+                manager.process_events(event)
+            manager.update(time_delta)
+            if victory:
+                screen.blit(pygame.transform.scale(load_image('win_screen.png'), (w, h)), (0, 0))
+            else:
+                screen.blit(pygame.transform.scale(load_image('gameover_screen.jpg'), (w, h)), (0, 0))
+            manager.draw_ui(screen)
+            pygame.display.flip()
+            clock.tick(fps)
+    else:
+        reboot_game = False
+        running = True
+        current_mode.next_level()
+        current_mode.levels[current_level].spawn_enemies(tile_size)
+        for e in current_mode.levels[current_level].enemies:
+            e.show_gun(e.gun_id)
+        hp_left = knight_main.hp
+        knight_main.kill()
+        knight_main = Knight((65, 65), hp_left, load_image('knight.png'), 1)
+        knight_main.hp_bar = HpBar(knight_main, MAX_HP)
 
 
 class Knight(pygame.sprite.Sprite):
@@ -186,7 +248,7 @@ class Knight(pygame.sprite.Sprite):
                 self.reversed_frames.append(pygame.transform.flip(img, True, False))
 
     def update(self, ev, ticks):
-        global running, VICTORY, REBOOT_GAME
+        global running, victory, reboot_game
         if ev.type == pygame.KEYDOWN:
             if ev.key == pygame.K_LEFT:
                 self.dx -= self.v
@@ -209,11 +271,11 @@ class Knight(pygame.sprite.Sprite):
             self.gun.shoot(ticks)
         if self.hp <= 0:
             self.kill()
-            REBOOT_GAME = True
-            VICTORY = False
+            reboot_game = True
+            victory = False
 
     def render(self, ticks):
-        if not REBOOT_GAME:
+        if not reboot_game:
             self.gun.render(ticks)
             self.hp_bar.render(screen)
 
@@ -228,7 +290,7 @@ class Knight(pygame.sprite.Sprite):
     def is_free(self, dx, dy):  # метод, который будет проверять клетку в которую мы пытаемся пойти,
         # если там препятствие - вернет False, иначе True
         newrect = self.rect.move(dx, dy)
-        if newrect.collidelist(level_mode.levels[level_mode.current_level].not_free_rects) != -1:
+        if newrect.collidelist(current_mode.levels[current_mode.current_level].not_free_rects) != -1:
             return False
         return True
 
@@ -275,9 +337,9 @@ class Knight(pygame.sprite.Sprite):
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, pos: tuple, hp, image: pygame.image, gun_id):
-        super(Enemy, self).__init__(all_sprites, level_mode.levels[current_level].enemies_sprites)
+        super(Enemy, self).__init__(all_sprites, current_mode.levels[current_level].enemies_sprites)
         self.rect = image.get_rect()
-        self.rect.x, self.rect.y = level_mode.levels[level_mode.current_level].get_left_top_pixel_of_cell(pos)
+        self.rect.x, self.rect.y = current_mode.levels[current_mode.current_level].get_left_top_pixel_of_cell(pos)
         self.pos = pos
         self.hp = hp
         self.next_shot = 300
@@ -288,7 +350,7 @@ class Enemy(pygame.sprite.Sprite):
 
         self.reloading = False
         self.moving = False
-        self.v = level_mode.levels[current_level].tile_size
+        self.v = current_mode.levels[current_level].tile_size
         self.flag_float = 0
         self.distances = []
         self.dx, self.dy = 0, 0
@@ -304,19 +366,19 @@ class Enemy(pygame.sprite.Sprite):
         self.hp_bar = HpBar(self, self.hp)
 
     def show_gun(self, gun_id):
-        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (40, 30)), (5, 5), 0, 10, self, 2),
+        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (40, 30)), (5, 5), 0, 10, self, 35),
                      # размеры, сдвиг относительно центра перса, тип патронов,
                      # средняя скорость пуль, владелец (для пуль), урон
                      # у дробовика размеры, сдвиг, владелец, урон, радиус
                      Shotgun(pygame.transform.scale(load_image('hammer.jpg', -1),
-                                                    (50, 25)), (20, 20), self, 10, 100)]
+                                                    (50, 25)), (20, 20), self, 60, 100)]
         self.gun = self.guns[gun_id]
 
     def shoot(self, ticks):
         self.gun.enemy_shoot(ticks)
 
     def update(self, n_ticks):
-        global ticks, VICTORY, REBOOT_GAME
+        global ticks, victory, reboot_game
         if not self.reloading:
             self.n_ticks_shoot = n_ticks
             self.reloading = True
@@ -332,18 +394,18 @@ class Enemy(pygame.sprite.Sprite):
             self.shoot(ticks)
             self.reloading = False
         if self.hp <= 0:
-            level_mode.levels[current_level].enemies.remove(self)
+            current_mode.levels[current_level].enemies.remove(self)
             self.gun.kill()
             self.kill()
-            if not level_mode.levels[current_level].enemies:
-                VICTORY = True
-                REBOOT_GAME = True
+            if not current_mode.levels[current_level].enemies:
+                victory = True
+                reboot_game = True
 
-        r0, c0 = level_mode.levels[current_level].get_cell((self.rect.x, self.rect.y))
-        r, c = level_mode.levels[current_level].get_cell((knight_main.rect.x, knight_main.rect.y))
+        r0, c0 = current_mode.levels[current_level].get_cell((self.rect.x, self.rect.y))
+        r, c = current_mode.levels[current_level].get_cell((knight_main.rect.x, knight_main.rect.y))
 
-        width = level_mode.levels[current_level].width
-        height = level_mode.levels[current_level].height
+        width = current_mode.levels[current_level].width
+        height = current_mode.levels[current_level].height
         if self.find_path(r0, c0, r, c):
             for dr, dc in ((0, -1), (-1, 0), (0, 1), (1, 0)):
                 next_r, next_c = r0 + dr, c0 + dc
@@ -363,8 +425,8 @@ class Enemy(pygame.sprite.Sprite):
                             self.flag_float = 0
 
     def find_path(self, r0, c0, r1, c1):
-        width = level_mode.levels[current_level].width
-        height = level_mode.levels[current_level].height
+        width = current_mode.levels[current_level].width
+        height = current_mode.levels[current_level].height
         self.distances = [[inf] * height for _ in range(width)]
         self.distances[r0][c0] = 0
         queue = [(r0, c0)]
@@ -384,7 +446,7 @@ class Enemy(pygame.sprite.Sprite):
                 for dc in priority_y:
                     next_r, next_c = r + dr, c + dc
                     if (0 <= next_r < height and 0 <= next_c < width and
-                            level_mode.levels[current_level].map_arr[next_r][next_c] != -1 and
+                            current_mode.levels[current_level].map_arr[next_r][next_c] != -1 and
                             self.distances[next_r][next_c] == inf):
                         self.distances[next_r][next_c] = self.distances[r][c] + 1
                         queue.append((next_r, next_c))
@@ -551,6 +613,7 @@ class Gun(pygame.sprite.Sprite):
                     knight_main.image = knight_main.normal_frames[knight_main.cur_frame]
 
                 self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *self.rect.center)
+                self.last_image = self.image
 
                 knight_main.direction_of_vision['Right'], \
                 knight_main.direction_of_vision['Left'] = True, False
@@ -563,6 +626,7 @@ class Gun(pygame.sprite.Sprite):
 
                 self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *self.rect.center)
                 self.image = pygame.transform.flip(self.image, True, False)
+                self.last_image = self.image
                 if knight_main.direction_of_vision['Right']:
                     self.rect.x -= 40
                 knight_main.direction_of_vision['Right'], \
@@ -591,10 +655,12 @@ class Gun(pygame.sprite.Sprite):
         if x > center_coords[0]:  # если курсор правее персонажа
             self.image, self.rect = self.rot_around_center(self.source_img, self.angle,
                                                            *(center_coords[0], center_coords[1] + 5))
+            self.last_image = self.image
         else:
             self.image, self.rect = self.rot_around_center(self.source_img, self.angle,
                                                            *(center_coords[0], center_coords[1] + 5))
             self.image = pygame.transform.flip(self.image, True, False)
+            self.last_image = self.image
 
         screen.blit(self.image, self.rect)
 
@@ -704,9 +770,10 @@ class Shotgun(pygame.sprite.Sprite):
                     knight_main.image = knight_main.normal_frames[knight_main.cur_frame]
 
                 self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *self.rect.center)
+                self.last_image = self.image
 
                 knight_main.direction_of_vision['Right'], \
-                    knight_main.direction_of_vision['Left'] = True, False
+                knight_main.direction_of_vision['Left'] = True, False
 
             else:
                 if knight_main.direction_of_vision['Right']:
@@ -718,8 +785,9 @@ class Shotgun(pygame.sprite.Sprite):
 
                 self.image, self.rect = self.rot_around_center(self.source_img, self.angle, *self.rect.center)
                 self.image = pygame.transform.flip(self.image, True, False)
+                self.last_image = self.image
                 knight_main.direction_of_vision['Right'], \
-                    knight_main.direction_of_vision['Left'] = False, True
+                knight_main.direction_of_vision['Left'] = False, True
 
         else:
             if knight_main.direction_of_vision['Right']:
@@ -758,8 +826,9 @@ class Shotgun(pygame.sprite.Sprite):
         damage_zone = pygame.Rect(x - self.radius, y - self.radius, self.radius * 2, self.radius * 2)
         self.angle_status = 1
         damage_zones.add(DamageZone((x, y), self.radius, ticks, 200))
-        for enemy in level_mode.levels[level_mode.current_level].enemies:
-            if damage_zone.colliderect(enemy.rect) and type(enemy) != type(self.owner):
+        for enemy in current_mode.levels[current_mode.current_level].enemies:
+            if damage_zone.colliderect(enemy.rect) and type(self.owner) != EnemyRifler and \
+                    type(self.owner) != EnemyShotguner:
 
                 distance = (sqrt((x - enemy.rect.center[0]) ** 2 + (y - enemy.rect.center[1]) ** 2) + 1)
                 damage = self.damage * (self.radius - distance) / self.radius
@@ -767,6 +836,8 @@ class Shotgun(pygame.sprite.Sprite):
                 if damage > 0:
                     enemy.hp -= damage
                     create_particles(enemy.rect.center)
+                    if self.owner == knight_main and mode == 1:
+                        current_mode.current_score += damage
                     print(damage)
 
         if damage_zone.colliderect(knight_main.rect) and knight_main != self.owner:
@@ -797,6 +868,7 @@ class Bullet(pygame.sprite.Sprite):
         self.average_v = average_v
 
     def update(self):
+        global mode
         vx, vy = None, None
         try:
             coeff = max(abs(self.vec_x), abs(self.vec_y)) / min(abs(self.vec_x), abs(self.vec_y))
@@ -825,11 +897,12 @@ class Bullet(pygame.sprite.Sprite):
         else:
             self.rect.y += vy
 
-        if self.rect.collidelist(level_mode.levels[level_mode.current_level].not_free_rects) != -1:
+        if self.rect.collidelist(current_mode.levels[current_mode.current_level].not_free_rects) != -1:
             self.kill()
 
-        for enemy in level_mode.levels[level_mode.current_level].enemies:
-            if pygame.sprite.collide_mask(enemy, self) and type(enemy) != type(self.owner):
+        for enemy in current_mode.levels[current_mode.current_level].enemies:
+            if pygame.sprite.collide_mask(enemy, self) and type(self.owner) != EnemyRifler and \
+                    type(self.owner) != EnemyShotguner:
                 enemy.hp -= self.damage
                 create_particles(enemy.rect.center)
                 self.kill()
@@ -913,7 +986,25 @@ class ModeWithLevels:
 
 
 class HardcoreMode:
-    pass
+    def __init__(self, knight: Knight):
+        self.knight = knight
+        self.levels = [[None] * 10]
+        self.current_level = None
+        self.not_first_level = False
+        self.current_score = 0
+        try:
+            with open('scores/hardcore_score.txt', 'r') as file:
+                self.best_score = int(file.read().strip())
+        except ValueError:
+            self.best_score = 0
+
+    def render(self):
+        self.levels[self.current_level].render()
+
+    def next_level(self):
+        global current_level
+        self.current_level = current_level = randint(0, 9)
+        self.not_first_level = True
 
 
 start_screen()
@@ -926,72 +1017,131 @@ if __name__ == '__main__':
         damage_zones = pygame.sprite.Group()
         fullscreen = True
         running = True
-        knight_main = Knight((60, 60), 5, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
-        level_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
-        # нажатии на экране кнопки "Режим уровней"
-        level_mode.levels = [Level('maps/Level1.tmx', [((19, 4), 1), ((5, 14), 1), ((28, 19), 0)], [21]),
-                             Level('maps/Level2.tmx', [((13, 19), 1), ((27, 12), 1), ((5, 20), 0)], [21]),
-                             Level('maps/Level3.tmx', [((10, 14), 1), ((18, 10), 1), ((30, 12), 0)], [21]),
-                             Level('maps/Level4.tmx', [((14, 21), 1), ((26, 9), 1), ((6, 26), 0), ((32, 9), 0)], [21]),
-                             Level('maps/Level5.tmx', [((10, 6), 1), ((31, 5), 1), ((32, 11), 1), ((17, 29), 0)], [21]),
-                             Level('maps/Level6.tmx', [((2, 26), 0), ((10, 27), 0), ((29, 3), 0), ((19, 15), 1)], [21]),
-                             Level('maps/Level7.tmx', [((8, 27), 0), ((23, 2), 0), ((27, 17), 1),
-                                                       ((33, 6), 1), ((33, 27), 1), ((12, 2), 0)], [13, 14]),
-                             Level('maps/Level8.tmx', [((13, 12), 1), ((13, 19), 1), ((27, 12), 1),
-                                                       ((27, 19), 1), ((20, 29), 0), ((34, 16), 0)], [13, 14]),
-                             Level('maps/Level9.tmx', [((28, 6), 0), ((34, 10), 1), ((10, 25), 0),
-                                                       ((6, 21), 1), ((25, 15), 0), ((26, 20), 1)], [13, 14])]
+        time_delta = clock.tick(fps) / 1000.0
+        if mode == 0:
+            knight_main = Knight((60, 60), MAX_HP, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
+            current_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
+            # нажатии на экране кнопки "Режим уровней"
+            current_mode.levels = [Level('maps/Level1.tmx', [((19, 4), 1), ((5, 14), 1), ((28, 19), 0)], [21]),
+                                   Level('maps/Level2.tmx', [((13, 19), 1), ((27, 12), 1), ((5, 20), 0)], [21]),
+                                   Level('maps/Level3.tmx', [((10, 14), 1), ((18, 10), 1), ((30, 12), 0)], [21]),
+                                   Level('maps/Level4.tmx', [((14, 21), 1), ((26, 9), 1), ((6, 26), 0), ((32, 9), 0)],
+                                         [21]),
+                                   Level('maps/Level5.tmx', [((10, 6), 1), ((31, 5), 1), ((32, 11), 1), ((17, 29), 0)],
+                                         [21]),
+                                   Level('maps/Level6.tmx', [((2, 26), 0), ((10, 27), 0), ((29, 3), 0), ((19, 15), 1)],
+                                         [21]),
+                                   Level('maps/Level7.tmx', [((8, 27), 0), ((23, 2), 0), ((27, 17), 1),
+                                                             ((33, 6), 1), ((33, 27), 1), ((12, 2), 0)], [13, 14]),
+                                   Level('maps/Level8.tmx', [((13, 12), 1), ((13, 19), 1), ((27, 12), 1),
+                                                             ((27, 19), 1), ((20, 29), 0), ((34, 16), 0)], [13, 14]),
+                                   Level('maps/Level9.tmx', [((28, 6), 0), ((34, 10), 1), ((10, 25), 0),
+                                                             ((6, 21), 1), ((25, 15), 0), ((26, 20), 1)], [13, 14])]
 
-        tile_size = level_mode.levels[current_level].map.tilewidth, \
-                    level_mode.levels[current_level].map.tileheight
-        level_mode.levels[current_level].spawn_enemies(tile_size)
-        for e in level_mode.levels[current_level].enemies:
-            e.show_gun(e.gun_id)
-
+            tile_size = current_mode.levels[current_level].map.tilewidth, \
+                        current_mode.levels[current_level].map.tileheight
+            current_mode.levels[current_level].spawn_enemies(tile_size)
+            for e in current_mode.levels[current_level].enemies:
+                e.show_gun(e.gun_id)
+        else:
+            knight_main = Knight((60, 60), MAX_HP, load_image('knight.png'), 1)
+            current_mode = HardcoreMode(knight_main)
+            current_mode.next_level()
+            current_mode.levels = [Level('maps/Hardcore_room1.tmx', [((19, 4), 1), ((5, 14), 1),
+                                                                     ((28, 19), 0)], [21]),
+                                   Level('maps/Hardcore_room2.tmx', [((13, 19), 1), ((27, 12), 1),
+                                                                     ((5, 20), 0)], [21]),
+                                   Level('maps/Hardcore_room3.tmx', [((10, 14), 1), ((18, 10), 1),
+                                                                     ((30, 12), 0)], [21]),
+                                   Level('maps/Hardcore_room4.tmx', [((14, 21), 1), ((26, 9), 1),
+                                                                     ((6, 26), 0), ((32, 9), 0)], [21]),
+                                   Level('maps/Hardcore_room5.tmx', [((10, 6), 1), ((31, 5), 1),
+                                                                     ((32, 11), 1), ((17, 29), 0)], [21]),
+                                   Level('maps/Hardcore_room6.tmx', [((2, 26), 0), ((10, 27), 0),
+                                                                     ((29, 3), 0), ((19, 15), 1)], [21]),
+                                   Level('maps/Hardcore_room7.tmx', [((8, 27), 0), ((23, 2), 0), ((27, 17), 1),
+                                                                     ((33, 6), 1), ((33, 27), 1), ((12, 2), 0)],
+                                         [13, 14]),
+                                   Level('maps/Hardcore_room8.tmx', [((13, 12), 1), ((13, 19), 1), ((27, 12), 1),
+                                                                     ((27, 19), 1), ((20, 29), 0), ((34, 16), 0)],
+                                         [13, 14]),
+                                   Level('maps/Hardcore_room9.tmx', [((28, 6), 0), ((34, 10), 1), ((10, 25), 0),
+                                                                     ((6, 21), 1), ((25, 15), 0), ((26, 20), 1)],
+                                         [13, 14]),
+                                   Level('maps/Hardcore_room10.tmx', [], [])]
+            tile_size = current_mode.levels[current_level].map.tilewidth, \
+                        current_mode.levels[current_level].map.tileheight
+            current_mode.levels[current_level].spawn_enemies(tile_size)
+            for e in current_mode.levels[current_level].enemies:
+                e.show_gun(e.gun_id)
         while running:
-            if not REBOOT_GAME:
+            if not reboot_game:
                 events = pygame.event.get()
                 for event in events:
                     if event.type == pygame.QUIT:
                         running = False
                         do_exit = True
                     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 2:
-                        print(level_mode.levels[level_mode.current_level].get_cell(event.pos))
+                        print(current_mode.levels[current_mode.current_level].get_cell(event.pos))
                     if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
                         if fullscreen:
                             screen = pygame.display.set_mode(size)
                         else:
                             screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
                         fullscreen = not fullscreen
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                        esc_window = pygame_gui.windows.ui_confirmation_dialog.UIConfirmationDialog(
+                            pygame.Rect(70, 420, 200, 200),
+                            manager, action_long_desc='Выход из игры',
+                            window_title='Подтверждение выхода из игры',
+                            action_short_name='Выйти',
+                            visible=False)
+                        if not esc_win_showed:
+                            esc_window.show()
+                            esc_win_showed = True
+                        else:
+                            esc_window.hide()
+                            esc_win_showed = False
+                    if event.type == pygame.USEREVENT:
+                        if event.ui_element == esc_window:
+                            if event.user_type == pygame_gui.UI_CONFIRMATION_DIALOG_CONFIRMED:
+                                running = False
+                                do_exit = True
+                            if event.user_type == pygame_gui.UI_WINDOW_CLOSE:
+                                esc_win_showed = False
+                                esc_window.hide()
                     knight_main.update(event, ticks)
+                    manager.process_events(event)
+                manager.draw_ui(screen)
+                manager.update(time_delta)
+                if not esc_win_showed:
+                    knight_main.move()
+                    knight_main.do_animate()
 
-                knight_main.move()
-                knight_main.do_animate()
+                    bullets.update()
+                    bullets.draw(screen)
 
-                bullets.update()
-                bullets.draw(screen)
+                    damage_zones.update(ticks)
 
-                damage_zones.update(ticks)
+                    knight_main.render(ticks)
 
-                knight_main.render(ticks)
+                    particles.update()
 
-                particles.update()
+                    current_mode.levels[current_level].enemies_sprites.draw(screen)
+                    for e in current_mode.levels[current_level].enemies:
+                        e.render(ticks)
 
-                level_mode.levels[current_level].enemies_sprites.draw(screen)
-                for e in level_mode.levels[current_level].enemies:
-                    e.render(ticks)
+                    ticks += 1
+                    animation_frequency += 1
+
+                    current_mode.levels[current_level].enemies_sprites.update(ticks)
+                    clock.tick(fps)
 
                 pygame.display.update()
-                level_mode.render()
+                current_mode.render()
                 all_sprites.draw(screen)
                 particles.draw(screen)
                 damage_zones.draw(screen)
-
-                ticks += 1
-                animation_frequency += 1
-
-                level_mode.levels[current_level].enemies_sprites.update(ticks)
-                clock.tick(fps)
             else:
                 endgame_screen()
                 continue

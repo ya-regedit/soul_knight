@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="41" height="32" tilewidth="30" tileheight="30" infinite="0" nextlayerid="2" nextobjectid="1">
+ <tileset firstgid="1" source="Наборы тайлов/Лавовый уровень пол.tsx"/>
+ <tileset firstgid="13" source="Наборы тайлов/Стены для второй локации.tsx"/>
+ <layer id="1" name="Слой тайлов 1" width="41" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzVWNFuAjEMg8HKGMf//+76QKTIsh2zp+0hEru2ic9NnNyep9Pp+Q/stu38so9tl23XbZ/b1mv9a9t92/e2x7aD7O1+lK/1OnuAX7W/MF5C/x1f7el7z80PO3+QtSlmx1j+E6wPsm/Ct8h68k6FsXx0nNP9s/1TvAXr05l7w9h56Hl3I8/qrg8RY3ontpZgdFgWibVM3HfuutZTjIqrwqnq8x2MirMEI8PH+OzWn3X/Lr9UficYUe8mXg94hjgnrU25x5pBLlRuujVWryw+0y2lx1jXpckKh8OPfYdpGGop6gLDynrhVOOOS8UNaiizqc/092axMefVPhY3tanPOD1V96MwYg+YtEjpLtYMw6hwOR6nmQM5OuA3Gs4UV/DL+JrytX4nd5jqRWFkMxa7b+WH3TlqxTTrqXosjFgTSidUrbP67vni8hHPTRiVLjBs2GeUBrlcZHeOsRhG11/SXJw47OcUvzVLs7p2OJOaTupZzSpJXTucDh/7bnJzgppT2Br2a4yBdeP6XzqPK/4n7WH9K6kb1R/c/O9ykcXp31x9bnKzDbsjlk9sdsdc/C3GXsNOcxj+BX87DtP/NaD29G+UCaPi2fGEGv8ORvy2SHhM5go305ThfK4wpn1v4pjVlJppcHZXflldO+4SjcR3chyhdjnt+ev2A6a2JFc=
+  </data>
+ </layer>
+</map>
