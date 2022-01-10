@@ -47,7 +47,7 @@ def start_screen():
     show_main_btns()
     hide_level_btns()
     hide_endgame_btns()
-    star_image = pygame.transform.scale(load_image('star.png', -1), (33, 33.3))
+    star_image = pygame.transform.scale(load_image('star.png', -1), (33, 33))
     show_stars = False
     while running:
         events = pygame.event.get()
@@ -1043,21 +1043,21 @@ if __name__ == '__main__':
             knight_main = Knight((65, 65), MAX_HP, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
             current_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
             # нажатии на экране кнопки "Режим уровней"
-            current_mode.levels = [Level('maps/Level1.tmx', [((19, 4), 1), ((5, 14), 1), ((28, 19), 0)], [21]),
-                                   Level('maps/Level2.tmx', [((13, 19), 1), ((27, 12), 1), ((5, 20), 0)], [21]),
-                                   Level('maps/Level3.tmx', [((10, 14), 1), ((18, 10), 1), ((30, 12), 0)], [21]),
-                                   Level('maps/Level4.tmx', [((14, 21), 1), ((26, 9), 1), ((6, 26), 0), ((32, 9), 0)],
+            current_mode.levels = [Level('maps/Level1.tmx', [((19, 4), 0), ((5, 14), 0), ((28, 19), 1)], [21]),
+                                   Level('maps/Level2.tmx', [((13, 19), 0), ((27, 12), 0), ((5, 20), 1)], [21]),
+                                   Level('maps/Level3.tmx', [((10, 14), 0), ((18, 10), 0), ((30, 12), 1)], [21]),
+                                   Level('maps/Level4.tmx', [((14, 21), 0), ((26, 9), 0), ((6, 26), 1), ((32, 9), 1)],
                                          [21]),
-                                   Level('maps/Level5.tmx', [((10, 6), 1), ((31, 5), 1), ((32, 11), 1), ((17, 29), 0)],
+                                   Level('maps/Level5.tmx', [((10, 6), 0), ((31, 5), 0), ((32, 11), 0), ((17, 29), 1)],
                                          [21]),
-                                   Level('maps/Level6.tmx', [((2, 26), 0), ((10, 27), 0), ((29, 3), 0), ((19, 15), 1)],
+                                   Level('maps/Level6.tmx', [((2, 26), 1), ((10, 27), 1), ((29, 3), 1), ((19, 15), 0)],
                                          [21]),
-                                   Level('maps/Level7.tmx', [((8, 27), 0), ((23, 2), 0), ((27, 17), 1),
-                                                             ((33, 6), 1), ((33, 27), 1), ((12, 2), 0)], [13, 14]),
-                                   Level('maps/Level8.tmx', [((13, 12), 1), ((13, 19), 1), ((27, 12), 1),
-                                                             ((27, 19), 1), ((20, 29), 0), ((34, 16), 0)], [13, 14]),
-                                   Level('maps/Level9.tmx', [((28, 6), 0), ((34, 10), 1), ((10, 25), 0),
-                                                             ((6, 21), 1), ((25, 15), 0), ((26, 20), 1)], [13, 14])]
+                                   Level('maps/Level7.tmx', [((8, 27), 1), ((23, 2), 1), ((27, 17), 0),
+                                                             ((33, 6), 0), ((33, 27), 0), ((12, 2), 1)], [13, 14]),
+                                   Level('maps/Level8.tmx', [((13, 12), 0), ((13, 19), 0), ((27, 12), 0),
+                                                             ((27, 19), 0), ((20, 29), 1), ((34, 16), 1)], [13, 14]),
+                                   Level('maps/Level9.tmx', [((28, 6), 1), ((34, 10), 0), ((10, 25), 1),
+                                                             ((6, 21), 0), ((25, 15), 1), ((26, 20), 0)], [13, 14])]
 
             tile_size = current_mode.levels[current_level].map.tilewidth, \
                         current_mode.levels[current_level].map.tileheight
