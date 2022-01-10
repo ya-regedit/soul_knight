@@ -276,7 +276,11 @@ class Knight(pygame.sprite.Sprite):
             elif ev.key == pygame.K_DOWN and self.dy >= 0:
                 self.dy -= self.v
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
-            self.gun.shoot(ticks)
+            if mode == 1:
+                if self.gun.angle_status == 0:
+                    self.gun.shoot(ticks)
+            else:
+                self.gun.shoot(ticks)
         if self.hp <= 0:
             self.kill()
             reboot_game = True
