@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "Hardcore_room7.tmx",
+    "activeFile": "Hardcore_room9.tmx",
     "expandedProjectPaths": [
         ".",
         "Наборы тайлов"
@@ -15,79 +15,79 @@
             "selectedLayer": 0,
             "viewCenter": {
                 "x": 462.14285714285717,
-                "y": 477.1428571428572
+                "y": 478.5714285714286
             }
         },
         "Hardcore_room10.tmx": {
-            "scale": 0.7140079365079365,
+            "scale": 0.5,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 614.1388317679098,
-                "y": 479.68654476740954
+                "x": 519,
+                "y": 478
             }
         },
         "Hardcore_room2.tmx": {
-            "scale": 0.6838492063492063,
+            "scale": 0.68,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 614.9016421981082,
-                "y": 478.9067486798584
+                "x": 613.970588235294,
+                "y": 479.4117647058822
             }
         },
         "Hardcore_room3.tmx": {
-            "scale": 0.7140079365079365,
+            "scale": 0.71,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 605.7355638303785,
-                "y": 480.3868170955372
+                "x": 604.9295774647887,
+                "y": 481.69014084507046
             }
         },
         "Hardcore_room4.tmx": {
-            "scale": 0.7140079365079365,
+            "scale": 0.71,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 616.9399210804202,
-                "y": 480.3868170955372
+                "x": 616.1971830985916,
+                "y": 481.69014084507046
             }
         },
         "Hardcore_room5.tmx": {
-            "scale": 0.7140079365079365,
+            "scale": 0.71,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 600.1333852053576,
-                "y": 480.3868170955372
+                "x": 599.2957746478874,
+                "y": 481.69014084507046
             }
         },
         "Hardcore_room6.tmx": {
-            "scale": 0.7140079365079365,
+            "scale": 0.71,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 615.5393764241651,
-                "y": 530.8064247207246
+                "x": 614.7887323943662,
+                "y": 530.9859154929578
             }
         },
         "Hardcore_room7.tmx": {
-            "scale": 0.7140079365079365,
+            "scale": 0.71,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 600.1333852053576,
-                "y": 434.1688434391152
+                "x": 599.2957746478874,
+                "y": 435.21126760563385
             }
         },
         "Hardcore_room8.tmx": {
-            "scale": 0.7140079365079365,
+            "scale": 0.71,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 614.1388317679098,
-                "y": 479.68654476740954
+                "x": 613.3802816901409,
+                "y": 480.2816901408451
             }
         },
         "Hardcore_room9.tmx": {
-            "scale": 0.7140079365079365,
+            "scale": 0.71,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 614.1388317679098,
-                "y": 479.68654476740954
+                "x": 613.3802816901409,
+                "y": 480.2816901408451
             }
         },
         "Level1.tmx": {
@@ -254,10 +254,10 @@
         "Hardcore_room4.tmx",
         "Hardcore_room5.tmx",
         "Hardcore_room6.tmx",
+        "Hardcore_room7.tmx",
+        "Hardcore_room8.tmx",
         "Hardcore_room10.tmx",
         "Hardcore_room9.tmx",
-        "Hardcore_room8.tmx",
-        "Hardcore_room7.tmx",
         "Наборы тайлов/Лавовый уровень пол.tsx",
         "Наборы тайлов/Стены для третьей локации.tsx"
     ],

@@ -40,9 +40,11 @@ to_exit = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(625.0, 720.0, 2
                                        text='Выйти из игры', manager=manager)
 endgame_btns = [to_beginning, to_exit]
 
-esc_window = pygame_gui.windows.ui_confirmation_dialog.UIConfirmationDialog(pygame.Rect(70, 420, 200, 200),
-                                                                            manager, action_long_desc='Выход из игры',
-                                                                            window_title='Подтверждение выхода из игры',
+esc_window = pygame_gui.windows.ui_confirmation_dialog.UIConfirmationDialog(pygame.Rect(215, 280, 800, 400),
+                                                                            manager,
+                                                                            action_long_desc='Вернуться в '
+                                                                                             'главное меню?',
+                                                                            window_title='Выход в меню',
                                                                             action_short_name='Выйти',
                                                                             visible=False)
 

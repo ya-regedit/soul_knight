@@ -75,7 +75,6 @@ def start_screen():
                         running = False
                         do_exit = False
                         hide_level_btns()
-
                         pygame.mixer.music.fadeout(1000)
                         if current_level in (0, 1, 2):
                             pygame.mixer.music.load('data/music/first_floor.mp3')
@@ -88,6 +87,8 @@ def start_screen():
                     if event.ui_element == hardcore_mode_btn:
                         hide_main_btns()
                         mode = 1
+                        running = False
+                        do_exit = False
                         return
 
             manager.process_events(event)
@@ -105,6 +106,15 @@ def start_screen():
                     screen.blit(star_image, (
                         70 + max((key % 3), 0) * 100 + max((key % 3), 0) * 40 - star_image.get_width(),
                         (300 + 100 * (key // 3) + 20 * (key // 3)) + 33.3 * i))
+        if not show_stars:
+            try:
+                with open('scores/hardcore_score.txt', 'r') as file:
+                    best_score = int(file.read().strip())
+            except ValueError:
+                best_score = 0
+            font1 = pygame.font.SysFont('impact', 31, bold=False)
+            hardcore_score_txt = font1.render(f'Ваш рекорд: {best_score}', True, (51, 209, 255))
+            screen.blit(hardcore_score_txt, (333.0, 780.0, 210.0, 30.0))
         manager.draw_ui(screen)
         pygame.display.flip()
         clock.tick(fps)
@@ -133,11 +143,9 @@ def endgame_screen():
                 file.write('{}:{}\n'.format(key, val))
 
     if mode == 1 and not victory:
-        print(current_mode.current_score, current_mode.best_score)
         if current_mode.current_score > current_mode.best_score:
             with open('scores/hardcore_score.txt', 'w') as file:
                 file.write(str(round(current_mode.current_score)))
-            print(current_mode.current_score)
 
     if not victory:
         pygame.mixer.music.fadeout(1000)
@@ -250,22 +258,22 @@ class Knight(pygame.sprite.Sprite):
     def update(self, ev, ticks):
         global running, victory, reboot_game
         if ev.type == pygame.KEYDOWN:
-            if ev.key == pygame.K_LEFT:
+            if ev.key == pygame.K_LEFT and self.dx >= 0:
                 self.dx -= self.v
-            elif ev.key == pygame.K_RIGHT:
+            elif ev.key == pygame.K_RIGHT and self.dx <= 0:
                 self.dx += self.v
-            elif ev.key == pygame.K_UP:
+            elif ev.key == pygame.K_UP and self.dy >= 0:
                 self.dy -= self.v
-            elif ev.key == pygame.K_DOWN:
+            elif ev.key == pygame.K_DOWN and self.dy <= 0:
                 self.dy += self.v
         if ev.type == pygame.KEYUP:
-            if ev.key == pygame.K_LEFT:
+            if ev.key == pygame.K_LEFT and self.dx <= 0 :
                 self.dx += self.v
-            elif ev.key == pygame.K_RIGHT:
+            elif ev.key == pygame.K_RIGHT and self.dx >= 0:
                 self.dx -= self.v
-            elif ev.key == pygame.K_UP:
+            elif ev.key == pygame.K_UP and self.dy <= 0:
                 self.dy += self.v
-            elif ev.key == pygame.K_DOWN:
+            elif ev.key == pygame.K_DOWN and self.dy >= 0:
                 self.dy -= self.v
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
             self.gun.shoot(ticks)
@@ -283,9 +291,10 @@ class Knight(pygame.sprite.Sprite):
         self.next_pos = self.pos[0] + self.dx, self.pos[1] + self.dy
         if self.is_free(self.dx, 0):
             self.rect = self.rect.move(self.dx, 0)
+            self.pos = self.next_pos
         if self.is_free(0, self.dy):
             self.rect = self.rect.move(0, self.dy)
-        self.pos = self.next_pos
+            self.pos = self.next_pos
 
     def is_free(self, dx, dy):  # метод, который будет проверять клетку в которую мы пытаемся пойти,
         # если там препятствие - вернет False, иначе True
@@ -331,7 +340,7 @@ class Knight(pygame.sprite.Sprite):
                      # средняя скорость пуль, владелец (для пуль), урон
                      # у дробовика размеры, сдвиг, владелец, урон, радиус
                      Shotgun(pygame.transform.scale(load_image('hammer.jpg', -1),
-                                                    (75, 30)), (20, 20), self, 10, 100)]
+                                                    (50, 30)), (10, 5), self, 10, 100)]
         self.gun = self.guns[gun_id]
 
 
@@ -371,7 +380,7 @@ class Enemy(pygame.sprite.Sprite):
                      # средняя скорость пуль, владелец (для пуль), урон
                      # у дробовика размеры, сдвиг, владелец, урон, радиус
                      Shotgun(pygame.transform.scale(load_image('hammer.jpg', -1),
-                                                    (50, 25)), (20, 20), self, 60, 100)]
+                                                    (35, 25)), (20, -5), self, 60, 100)]
         self.gun = self.guns[gun_id]
 
     def shoot(self, ticks):
@@ -521,9 +530,17 @@ class Level:
 
     def spawn_enemies(self, tile_size):
         e = []
-        image1 = load_image('enemy_1.png', -1)
-        image2 = load_image('enemy_2.png')
-
+        if current_level in (0, 1, 2):
+            image1 = load_image('snow_enemy1.png')
+            image2 = load_image('snow_enemy2.png')
+        elif current_level in (3, 4, 5):
+            image1 = load_image('desert_enemy1.png')
+            image2 = load_image('desert_enemy2.png')
+        elif current_level in (6, 7, 8):
+            image1 = load_image('alien_enemy1.png')
+            image2 = load_image('alien_enemy2.png')
+        else:
+            image1 = image2 = load_image('lava_enemy.png')
         if image1.get_width() < image1.get_height():
             k = tile_size[1] / image1.get_height()
             image1 = pygame.transform.scale(image1, (round(k * image1.get_width()), tile_size[1]))
@@ -797,7 +814,7 @@ class Shotgun(pygame.sprite.Sprite):
         screen.blit(self.image, self.rect)
 
     def enemy_render(self, rect: pygame.Rect, ticks):
-        center_coords = rect.center
+        center_coords = rect.center[0], rect.center[1] - self.shift_y
         x, y = knight_main.rect.center
         self.adjacent_cathet = sqrt((x - center_coords[0]) ** 2)
         self.opposite_cathet = sqrt((y - center_coords[1]) ** 2)
@@ -825,7 +842,7 @@ class Shotgun(pygame.sprite.Sprite):
         x, y = self.rect.center
         damage_zone = pygame.Rect(x - self.radius, y - self.radius, self.radius * 2, self.radius * 2)
         self.angle_status = 1
-        damage_zones.add(DamageZone((x, y), self.radius, ticks, 200))
+        damage_zones.add(DamageZone((x, y), self.radius, ticks, 100))
         for enemy in current_mode.levels[current_mode.current_level].enemies:
             if damage_zone.colliderect(enemy.rect) and type(self.owner) != EnemyRifler and \
                     type(self.owner) != EnemyShotguner:
@@ -943,7 +960,7 @@ class Particle(pygame.sprite.Sprite):
 
 class DamageZone(pygame.sprite.Sprite):
     def __init__(self, pos, radius, tick, lifetime):
-        super().__init__(all_sprites)
+        super().__init__()
         self.image = pygame.transform.scale(load_image('hammer_shot.png', -1), (radius, radius))
         self.rect = pygame.rect.Rect(pos[0] - radius // 2, pos[1] - radius // 2, radius, radius)
         self.spawn_tick = tick
@@ -1019,7 +1036,7 @@ if __name__ == '__main__':
         running = True
         time_delta = clock.tick(fps) / 1000.0
         if mode == 0:
-            knight_main = Knight((60, 60), MAX_HP, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
+            knight_main = Knight((65, 65), MAX_HP, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
             current_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
             # нажатии на экране кнопки "Режим уровней"
             current_mode.levels = [Level('maps/Level1.tmx', [((19, 4), 1), ((5, 14), 1), ((28, 19), 0)], [21]),
@@ -1044,31 +1061,41 @@ if __name__ == '__main__':
             for e in current_mode.levels[current_level].enemies:
                 e.show_gun(e.gun_id)
         else:
-            knight_main = Knight((60, 60), MAX_HP, load_image('knight.png'), 1)
+            knight_main = Knight((65, 65), MAX_HP, load_image('knight.png'), 1)
             current_mode = HardcoreMode(knight_main)
             current_mode.next_level()
-            current_mode.levels = [Level('maps/Hardcore_room1.tmx', [((19, 4), 1), ((5, 14), 1),
-                                                                     ((28, 19), 0)], [21]),
-                                   Level('maps/Hardcore_room2.tmx', [((13, 19), 1), ((27, 12), 1),
-                                                                     ((5, 20), 0)], [21]),
-                                   Level('maps/Hardcore_room3.tmx', [((10, 14), 1), ((18, 10), 1),
-                                                                     ((30, 12), 0)], [21]),
-                                   Level('maps/Hardcore_room4.tmx', [((14, 21), 1), ((26, 9), 1),
-                                                                     ((6, 26), 0), ((32, 9), 0)], [21]),
-                                   Level('maps/Hardcore_room5.tmx', [((10, 6), 1), ((31, 5), 1),
-                                                                     ((32, 11), 1), ((17, 29), 0)], [21]),
-                                   Level('maps/Hardcore_room6.tmx', [((2, 26), 0), ((10, 27), 0),
-                                                                     ((29, 3), 0), ((19, 15), 1)], [21]),
-                                   Level('maps/Hardcore_room7.tmx', [((8, 27), 0), ((23, 2), 0), ((27, 17), 1),
-                                                                     ((33, 6), 1), ((33, 27), 1), ((12, 2), 0)],
+            current_mode.levels = [Level('maps/Hardcore_room1.tmx', [((11, 20), 1), ((21, 10), 1),
+                                                                     ((30, 20), 1), ((3, 28), 1),
+                                                                     ((29, 28), 1), ((5, 7), 0),
+                                                                     ((7, 6), 0)], [21]),
+                                   Level('maps/Hardcore_room2.tmx', [((18, 6), 1), ((2, 26), 1),
+                                                                     ((13, 25), 1), ((16, 15), 1),
+                                                                     ((6, 6), 0), ((10, 3), 0),
+                                                                     ((32, 25), 1)], [21]),
+                                   Level('maps/Hardcore_room3.tmx', [((15, 11), 1), ((26, 9), 1),
+                                                                     ((20, 16), 1), ((26, 25), 1), ((13, 27), 0)],
+                                         [21]),
+                                   Level('maps/Hardcore_room4.tmx', [((10, 20), 1), ((30, 22), 1),
+                                                                     ((3, 29), 1), ((37, 5), 1),
+                                                                     ((6, 24), 0), ((9, 2), 0)], [21]),
+                                   Level('maps/Hardcore_room5.tmx', [((16, 17), 0), ((26, 17), 1),
+                                                                     ((2, 16), 1), ((38, 6), 1),
+                                                                     ((32, 29), 1), ((9, 29), 0)], [21]),
+                                   Level('maps/Hardcore_room6.tmx', [((20, 15), 1), ((8, 16), 1),
+                                                                     ((33, 13), 1), ((36, 2), 1),
+                                                                     ((21, 7), 1), ((6, 10), 0), ((29, 29), 0)], [21]),
+                                   Level('maps/Hardcore_room7.tmx', [((2, 8), 0), ((21, 3), 0), ((37, 28), 1),
+                                                                     ((3, 28), 1), ((7, 12), 1), ((31, 17), 0)],
                                          [13, 14]),
-                                   Level('maps/Hardcore_room8.tmx', [((13, 12), 1), ((13, 19), 1), ((27, 12), 1),
-                                                                     ((27, 19), 1), ((20, 29), 0), ((34, 16), 0)],
+                                   Level('maps/Hardcore_room8.tmx', [((8, 5), 0), ((25, 5), 1), ((20, 17), 1),
+                                                                     ((3, 28), 1), ((37, 28), 0), ((32, 13), 0),
+                                                                     ((24, 13), 1)], [13, 14]),
+                                   Level('maps/Hardcore_room9.tmx', [((20, 12), 1), ((4, 16), 1), ((34, 3), 1),
+                                                                     ((20, 19), 0), ((14, 25), 0), ((26, 20), 1)],
                                          [13, 14]),
-                                   Level('maps/Hardcore_room9.tmx', [((28, 6), 0), ((34, 10), 1), ((10, 25), 0),
-                                                                     ((6, 21), 1), ((25, 15), 0), ((26, 20), 1)],
-                                         [13, 14]),
-                                   Level('maps/Hardcore_room10.tmx', [], [])]
+                                   Level('maps/Hardcore_room10.tmx', [((34, 15), 1),
+                                                                      ((7, 15), 1), ((30, 5), 1),
+                                                                      ((6, 5), 1), ((5, 28), 1)], [13])]
             tile_size = current_mode.levels[current_level].map.tilewidth, \
                         current_mode.levels[current_level].map.tileheight
             current_mode.levels[current_level].spawn_enemies(tile_size)
@@ -1090,23 +1117,27 @@ if __name__ == '__main__':
                             screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
                         fullscreen = not fullscreen
                     if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                        esc_window = pygame_gui.windows.ui_confirmation_dialog.UIConfirmationDialog(
-                            pygame.Rect(70, 420, 200, 200),
-                            manager, action_long_desc='Выход из игры',
-                            window_title='Подтверждение выхода из игры',
-                            action_short_name='Выйти',
-                            visible=False)
                         if not esc_win_showed:
+                            esc_window = pygame_gui.windows.ui_confirmation_dialog.UIConfirmationDialog(
+                                pygame.Rect(215, 280, 800, 400),
+                                manager, action_long_desc='Вернуться в главное меню?',
+                                window_title='Выход в меню',
+                                action_short_name='Выйти',
+                                visible=False)
                             esc_window.show()
                             esc_win_showed = True
                         else:
-                            esc_window.hide()
+                            esc_window.kill()
                             esc_win_showed = False
                     if event.type == pygame.USEREVENT:
                         if event.ui_element == esc_window:
                             if event.user_type == pygame_gui.UI_CONFIRMATION_DIALOG_CONFIRMED:
-                                running = False
-                                do_exit = True
+                                reboot_game = False
+                                if mode == 1:
+                                    if current_mode.current_score > current_mode.best_score:
+                                        with open('scores/hardcore_score.txt', 'w') as file:
+                                            file.write(str(round(current_mode.current_score)))
+                                start_screen()
                             if event.user_type == pygame_gui.UI_WINDOW_CLOSE:
                                 esc_win_showed = False
                                 esc_window.hide()
@@ -1139,9 +1170,9 @@ if __name__ == '__main__':
 
                 pygame.display.update()
                 current_mode.render()
+                damage_zones.draw(screen)
                 all_sprites.draw(screen)
                 particles.draw(screen)
-                damage_zones.draw(screen)
             else:
                 endgame_screen()
                 continue
