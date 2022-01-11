@@ -246,6 +246,11 @@ class Knight(pygame.sprite.Sprite):
         self.show_gun(self.gun_id)
         self.hp_bar = HpBar(self, self.hp)
 
+        self.up_pressed = False
+        self.down_pressed = False
+        self.left_pressed = False
+        self.right_pressed = False
+
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(self.pos[0], self.pos[1], sheet.get_width() // columns - 5,
                                 sheet.get_height() // rows - 5)
@@ -264,21 +269,29 @@ class Knight(pygame.sprite.Sprite):
         if ev.type == pygame.KEYDOWN:
             if ev.key == pygame.K_LEFT and self.dx >= 0:
                 self.dx -= self.v
+                self.left_pressed = True
             elif ev.key == pygame.K_RIGHT and self.dx <= 0:
                 self.dx += self.v
+                self.right_pressed = True
             elif ev.key == pygame.K_UP and self.dy >= 0:
                 self.dy -= self.v
+                self.up_pressed = True
             elif ev.key == pygame.K_DOWN and self.dy <= 0:
                 self.dy += self.v
+                self.down_pressed = True
         if ev.type == pygame.KEYUP:
-            if ev.key == pygame.K_LEFT and self.dx <= 0:
+            if ev.key == pygame.K_LEFT and self.dx <= 0 and self.left_pressed:
                 self.dx += self.v
-            elif ev.key == pygame.K_RIGHT and self.dx >= 0:
+                self.left_pressed = False
+            elif ev.key == pygame.K_RIGHT and self.dx >= 0 and self.right_pressed:
                 self.dx -= self.v
-            elif ev.key == pygame.K_UP and self.dy <= 0:
+                self.right_pressed = False
+            elif ev.key == pygame.K_UP and self.dy <= 0 and self.up_pressed:
                 self.dy += self.v
-            elif ev.key == pygame.K_DOWN and self.dy >= 0:
+                self.up_pressed = False
+            elif ev.key == pygame.K_DOWN and self.dy >= 0 and self.down_pressed:
                 self.dy -= self.v
+                self.down_pressed = False
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
             if mode == 1:
                 if self.gun.angle_status == 0:
