@@ -32,7 +32,7 @@ level8 = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(210.0, 540.0, 10
                                       text='Уровень 8', manager=manager)
 level9 = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(350.0, 540.0, 100.0, 100.0),
                                       text='Уровень 9', manager=manager)
-level_btns = [level1, level2, level3, level4, level5, level6, level7, level8, level9, back_btn]
+
 
 to_beginning = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(365.0, 720.0, 210.0, 75.0),
                                             text='Вернуться в начало', manager=manager)
@@ -47,6 +47,10 @@ esc_window = pygame_gui.windows.ui_confirmation_dialog.UIConfirmationDialog(pyga
                                                                             window_title='Выход в меню',
                                                                             action_short_name='Выйти',
                                                                             visible=False)
+reset_btn = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(1040.0, 0, 190.0, 50.0),
+                                            text='Сбросить прогресс', manager=manager)
+
+level_btns = [level1, level2, level3, level4, level5, level6, level7, level8, level9, back_btn, reset_btn]
 
 
 def show_level_btns():

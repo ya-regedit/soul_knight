@@ -12,7 +12,7 @@ from math import sqrt, degrees, atan, inf
 from constants import *
 from UI import manager, show_level_btns, hide_level_btns, show_main_btns, hide_main_btns, \
     show_endgame_btns, hide_endgame_btns, to_beginning, to_exit, \
-    level_mode_btn, hardcore_mode_btn, exit_button1, back_btn, level_btns, esc_window
+    level_mode_btn, hardcore_mode_btn, exit_button1, back_btn, level_btns, esc_window, reset_btn
 
 pygame.init()
 screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
@@ -66,11 +66,15 @@ def start_screen():
                         show_level_btns()
                         mode = 0
                         show_stars = True
+                    if event.ui_element == reset_btn:
+                        with open('scores/levels_score.txt', 'w') as file1:
+                            file1.write('')
                     if event.ui_element == back_btn:
                         hide_level_btns()
                         show_main_btns()
                         show_stars = False
-                    if event.ui_element in level_btns and event.ui_element != back_btn:
+                    if event.ui_element in level_btns and event.ui_element != back_btn and \
+                            event.ui_element != reset_btn:
                         current_level = int(event.ui_element.text[-1]) - 1
                         running = False
                         do_exit = False
@@ -267,7 +271,7 @@ class Knight(pygame.sprite.Sprite):
             elif ev.key == pygame.K_DOWN and self.dy <= 0:
                 self.dy += self.v
         if ev.type == pygame.KEYUP:
-            if ev.key == pygame.K_LEFT and self.dx <= 0 :
+            if ev.key == pygame.K_LEFT and self.dx <= 0:
                 self.dx += self.v
             elif ev.key == pygame.K_RIGHT and self.dx >= 0:
                 self.dx -= self.v
@@ -1157,6 +1161,7 @@ if __name__ == '__main__':
                     bullets.draw(screen)
 
                     damage_zones.update(ticks)
+                    damage_zones.draw(screen)
 
                     knight_main.render(ticks)
 
@@ -1174,7 +1179,7 @@ if __name__ == '__main__':
 
                 pygame.display.update()
                 current_mode.render()
-                damage_zones.draw(screen)
+
                 all_sprites.draw(screen)
                 particles.draw(screen)
             else:
