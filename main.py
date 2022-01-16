@@ -47,7 +47,7 @@ def start_screen():
     show_main_btns()
     hide_level_btns()
     hide_endgame_btns()
-    star_image = pygame.transform.scale(load_image('star.png', -1), (33, 33))
+    star_image = pygame.transform.scale(load_image('star.png', -1), (round(size[0] / 37.273), round(size[1] / 29.09)))
     show_stars = False
     while running:
         events = pygame.event.get()
@@ -106,19 +106,24 @@ def start_screen():
                     scores[key] = val
             for key, val in scores.items():
                 key, val = int(key), int(val)
-                for i in range(int(val)):
+                for i in range(val):
                     screen.blit(star_image, (
-                        70 + max((key % 3), 0) * 100 + max((key % 3), 0) * 40 - star_image.get_width(),
-                        (300 + 100 * (key // 3) + 20 * (key // 3)) + 33.3 * i))
+                        round(size[0] / 17.57) + max((key % 3), 0) * round(size[0] / 12.3) +
+                        max((key % 3), 0) * (round(size[0] / 5.857) - (
+                                round(size[0] / 17.57) + round(size[0] / 12.3))) - star_image.get_width(),
+                        (round(size[1] / 3.2) + round(size[1] / 9.6) * (key // 3) + (round(size[1] / 2.2857) - (
+                                round(size[1] / 3.2) + round(size[1] / 9.6))) * (
+                                 key // 3)) + star_image.get_height() * i))
         if not show_stars:
             try:
                 with open('scores/hardcore_score.txt', 'r') as file:
                     best_score = int(file.read().strip())
             except ValueError:
                 best_score = 0
-            font1 = pygame.font.SysFont('impact', 31, bold=False)
+            font1 = pygame.font.SysFont('impact', round(size[0] / 39.6774), bold=False)
             hardcore_score_txt = font1.render(f'Ваш рекорд: {best_score}', True, (51, 209, 255))
-            screen.blit(hardcore_score_txt, (333.0, 780.0, 210.0, 30.0))
+            screen.blit(hardcore_score_txt, (
+                round(size[0] / 3.6936), round(size[1] / 1.2307), round(size[0] / 5.8571), round(size[1] / 32)))
         manager.draw_ui(screen)
         pygame.display.flip()
         clock.tick(fps)
@@ -198,7 +203,7 @@ def endgame_screen():
             e.show_gun(e.gun_id)
         hp_left = knight_main.hp
         knight_main.kill()
-        knight_main = Knight((65, 65), hp_left, load_image('knight.png'), 1)
+        knight_main = Knight((50, 50), hp_left, load_image('knight.png'), 1)
         knight_main.hp_bar = HpBar(knight_main, MAX_HP)
 
 
@@ -216,7 +221,7 @@ class Knight(pygame.sprite.Sprite):
         self.direction_of_vision = {'Right': True, 'Left': False}
 
         self.sheet = sheet
-        self.sheet = pygame.transform.scale(self.sheet, (240, 240))
+        self.sheet = pygame.transform.scale(self.sheet, (round(size[0] / 5.125), round(size[1] / 4)))
         self.rect = pygame.Rect(self.pos[0], self.pos[1], self.sheet.get_width() // 4 - 5,
                                 self.sheet.get_height() // 4 - 5)
 
@@ -356,12 +361,15 @@ class Knight(pygame.sprite.Sprite):
             animation_frequency = 0
 
     def show_gun(self, gun_id):
-        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (60, 45)), (5, 5), 0, 10, self, 2),
-                     # размеры, сдвиг относительно центра перса, тип патронов,
-                     # средняя скорость пуль, владелец (для пуль), урон
-                     # у дробовика размеры, сдвиг, владелец, урон, радиус
-                     Shotgun(pygame.transform.scale(load_image('hammer.jpg', -1),
-                                                    (50, 30)), (10, 5), self, 10, 100)]
+        self.guns = [
+            Gun(pygame.transform.scale(load_image('Aurora.png'), (round(size[0] / 20.5), round(size[1] / 21.33))),
+                (round(size[0] / 246), round(size[1] / 192)), 0, 10, self, 2),
+            # размеры, сдвиг относительно центра перса, тип патронов,
+            # средняя скорость пуль, владелец (для пуль), урон
+            # у дробовика размеры, сдвиг, владелец, урон, радиус
+            Shotgun(pygame.transform.scale(load_image('hammer.jpg', -1),
+                                           (round(size[0] / 24.6), round(size[1] / 32))),
+                    (round(size[0] / 123), round(size[1] / 192)), self, 10, 100)]
         self.gun = self.guns[gun_id]
 
 
@@ -380,7 +388,7 @@ class Enemy(pygame.sprite.Sprite):
 
         self.reloading = False
         self.moving = False
-        self.v = current_mode.levels[current_level].tile_size
+        self.v = round(size[0] / 41), round(size[1] / 32)
         self.flag_float = 0
         self.distances = []
         self.dx, self.dy = 0, 0
@@ -396,12 +404,16 @@ class Enemy(pygame.sprite.Sprite):
         self.hp_bar = HpBar(self, self.hp)
 
     def show_gun(self, gun_id):
-        self.guns = [Gun(pygame.transform.scale(load_image('Aurora.png'), (40, 30)), (5, 5), 0, 10, self, 35),
-                     # размеры, сдвиг относительно центра перса, тип патронов,
-                     # средняя скорость пуль, владелец (для пуль), урон
-                     # у дробовика размеры, сдвиг, владелец, урон, радиус
-                     Shotgun(pygame.transform.scale(load_image('hammer.jpg', -1),
-                                                    (35, 25)), (20, -5), self, 60, 100)]
+        self.guns = [
+            Gun(pygame.transform.scale(load_image('Aurora.png'), (round(size[0] / 30.75), round(size[1] / 32))),
+                (round(size[0] / 246), round(size[1] / 192)),
+                0, 10, self, 35),
+            # размеры, сдвиг относительно центра перса, тип патронов,
+            # средняя скорость пуль, владелец (для пуль), урон
+            # у дробовика размеры, сдвиг, владелец, урон, радиус
+            Shotgun(pygame.transform.scale(load_image('hammer.jpg', -1),
+                                           (round(size[0] / 35.143), round(size[1] / 38.4))),
+                    (round(size[0] / 61.5), -round(size[1] / 192)), self, 60, 100)]
         self.gun = self.guns[gun_id]
 
     def shoot(self, ticks):
@@ -442,7 +454,7 @@ class Enemy(pygame.sprite.Sprite):
                 if (0 <= next_r < height and 0 <= next_c < width and
                         self.distances[next_r][next_c] == self.distances[r0][c0] + 1):
                     if ticks - self.n_ticks_move > self.next_move:
-                        self.dx, self.dy = 0.0625 * (self.v * dr), 0.0625 * (self.v * dc)
+                        self.dx, self.dy = 0.0625 * (self.v[0] * dr), 0.0625 * (self.v[1] * dc)
                         if self.dx > 0:
                             self.image = self.source_image
                         elif self.dx < 0:
@@ -527,8 +539,9 @@ class Level:
 
     def get_cell(self, pos):
         x, y = pos
-        column = x // self.tile_size
-        row = y // self.tile_size
+        tile_size = round(size[0] / 41), round(size[1] / 32)
+        column = x // tile_size[0]
+        row = y // tile_size[1]
         if 0 <= row < self.height and 0 <= column < self.width:
             return column, row
         return None
@@ -536,12 +549,13 @@ class Level:
     def generate_rects_and_map_array(self):
         rects = []
         map_arr = []
+        tile_size = round(size[0] / 41), round(size[1] / 32)
         for i in range(self.map.width):
             line = []
             for j in range(self.map.height):
                 if self.map.tiledgidmap[self.map.get_tile_gid(i, j, 0)] in self.not_free_tiles:
-                    rect = pygame.Rect(i * self.map.tilewidth, j * self.map.tileheight,
-                                       self.map.tilewidth, self.map.tileheight)
+                    rect = pygame.Rect(i * tile_size[0], j * tile_size[1],
+                                       tile_size[0], tile_size[1])
                     rects.append(rect)
                     line.append(-1)
                 else:
@@ -577,7 +591,8 @@ class Level:
             image2 = pygame.transform.scale(image2, (tile_size[0], round(k * image2.get_height())))
 
         for enemy in self.enemies_list:
-            pos = self.tile_size * enemy[0][0], self.tile_size * enemy[0][1]
+            tile_size = round(size[0] / 41), round(size[1] / 32)
+            pos = tile_size[0] * enemy[0][0], tile_size[1] * enemy[0][1]
             if 0 <= enemy[0][0] < self.map.width and 0 <= enemy[0][1] < self.map.height:
                 if enemy[1] == 1:
                     e.append(EnemyRifler(pos, 10, image1, 'тут будет передача поля', 0))
@@ -590,7 +605,9 @@ class Level:
         for x in range(self.width):
             for y in range(self.height):
                 image = self.map.get_tile_image(x, y, 0)
-                screen.blit(image, (x * self.tile_size, y * self.tile_size))
+                tile_size = round(size[0] / 41), round(size[1] / 32)
+                image = pygame.transform.scale(image, tile_size)
+                screen.blit(image, (x * tile_size[0], y * tile_size[1]))
 
     def get_tile_id(self, pos):
         if pos:
@@ -675,7 +692,8 @@ class Gun(pygame.sprite.Sprite):
                 self.image = self.source_img
             else:
                 self.image = pygame.transform.flip(self.source_img, True, False)
-                self.rect.x -= 40
+                if knight_main.direction_of_vision['Right']:
+                    self.rect.x -= 40
         screen.blit(self.image, self.rect)
 
     def enemy_render(self, rect: pygame.Rect, ticks):
@@ -1057,7 +1075,7 @@ if __name__ == '__main__':
         running = True
         time_delta = clock.tick(fps) / 1000.0
         if mode == 0:
-            knight_main = Knight((65, 65), MAX_HP, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
+            knight_main = Knight((50, 50), MAX_HP, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
             current_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
             # нажатии на экране кнопки "Режим уровней"
             current_mode.levels = [Level('maps/Level1.tmx', [((19, 4), 0), ((5, 14), 0), ((28, 19), 1)], [21]),
@@ -1076,13 +1094,12 @@ if __name__ == '__main__':
                                    Level('maps/Level9.tmx', [((28, 6), 1), ((34, 10), 0), ((10, 25), 1),
                                                              ((6, 21), 0), ((25, 15), 1), ((26, 20), 0)], [13, 14])]
 
-            tile_size = current_mode.levels[current_level].map.tilewidth, \
-                        current_mode.levels[current_level].map.tileheight
+            tile_size = round(size[0] / 41), round(size[1] / 32)
             current_mode.levels[current_level].spawn_enemies(tile_size)
             for e in current_mode.levels[current_level].enemies:
                 e.show_gun(e.gun_id)
         else:
-            knight_main = Knight((65, 65), MAX_HP, load_image('knight.png'), 1)
+            knight_main = Knight((50, 50), MAX_HP, load_image('knight.png'), 1)
             current_mode = HardcoreMode(knight_main)
             current_mode.next_level()
             current_mode.levels = [Level('maps/Hardcore_room1.tmx', [((11, 20), 1), ((21, 10), 1),
@@ -1117,8 +1134,7 @@ if __name__ == '__main__':
                                    Level('maps/Hardcore_room10.tmx', [((34, 15), 1),
                                                                       ((7, 15), 1), ((30, 5), 1),
                                                                       ((6, 5), 1), ((5, 28), 1)], [13])]
-            tile_size = current_mode.levels[current_level].map.tilewidth, \
-                        current_mode.levels[current_level].map.tileheight
+            tile_size = round(size[0] / 41), round(size[1] / 32)
             current_mode.levels[current_level].spawn_enemies(tile_size)
             for e in current_mode.levels[current_level].enemies:
                 e.show_gun(e.gun_id)
