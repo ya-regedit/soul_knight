@@ -1,4 +1,4 @@
-size = w, h = 1230, 960
+size = w, h = 1920, 1080
 running = True
 fps = 100
 ticks = 0

@@ -211,8 +211,9 @@ class Knight(pygame.sprite.Sprite):
     def __init__(self, pos: tuple, hp,
                  sheet: pygame.image, gun_id):
         super(Knight, self).__init__(all_sprites)
-        self.v = 2
-        self.pos = pos
+        self.v = 2 * size[0] / 1230, 2 * size[1] / 960
+
+        self.pos = [*pos]
         self.next_pos = pos
         self.hp = hp
         self.effect = None
@@ -273,29 +274,29 @@ class Knight(pygame.sprite.Sprite):
         global running, victory, reboot_game
         if ev.type == pygame.KEYDOWN:
             if (ev.key == pygame.K_LEFT or ev.key == pygame.K_a) and self.dx >= 0:
-                self.dx -= self.v
+                self.dx -= self.v[0]
                 self.left_pressed = True
             elif (ev.key == pygame.K_RIGHT or ev.key == pygame.K_d) and self.dx <= 0:
-                self.dx += self.v
+                self.dx += self.v[0]
                 self.right_pressed = True
             elif (ev.key == pygame.K_UP or ev.key == pygame.K_w) and self.dy >= 0:
-                self.dy -= self.v
+                self.dy -= self.v[1]
                 self.up_pressed = True
             elif (ev.key == pygame.K_DOWN or ev.key == pygame.K_s) and self.dy <= 0:
-                self.dy += self.v
+                self.dy += self.v[1]
                 self.down_pressed = True
         if ev.type == pygame.KEYUP:
             if (ev.key == pygame.K_LEFT or ev.key == pygame.K_a) and self.dx <= 0 and self.left_pressed:
-                self.dx += self.v
+                self.dx += self.v[0]
                 self.left_pressed = False
             elif (ev.key == pygame.K_RIGHT or ev.key == pygame.K_d) and self.dx >= 0 and self.right_pressed:
-                self.dx -= self.v
+                self.dx -= self.v[0]
                 self.right_pressed = False
             elif (ev.key == pygame.K_UP or ev.key == pygame.K_w) and self.dy <= 0 and self.up_pressed:
-                self.dy += self.v
+                self.dy += self.v[1]
                 self.up_pressed = False
             elif (ev.key == pygame.K_DOWN or ev.key == pygame.K_s) and self.dy >= 0 and self.down_pressed:
-                self.dy -= self.v
+                self.dy -= self.v[1]
                 self.down_pressed = False
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
             if mode == 1:
@@ -314,17 +315,18 @@ class Knight(pygame.sprite.Sprite):
             self.hp_bar.render(screen)
 
     def move(self):
-        self.next_pos = self.pos[0] + self.dx, self.pos[1] + self.dy
-        if self.is_free(self.dx, 0):
-            self.rect = self.rect.move(self.dx, 0)
-            self.pos = self.next_pos
-        if self.is_free(0, self.dy):
-            self.rect = self.rect.move(0, self.dy)
-            self.pos = self.next_pos
+        self.next_pos = round(self.pos[0] + self.dx), round(self.pos[1] + self.dy)
+        newrect = pygame.Rect(self.next_pos[0], self.rect.y, self.rect.w, self.rect.h)
+        if self.is_free(newrect):
+            self.rect.x = self.next_pos[0]
+            self.pos[0] = self.next_pos[0]
+        newrect = pygame.Rect(self.rect.x, self.next_pos[1], self.rect.w, self.rect.h)
+        if self.is_free(newrect):
+            self.rect.y = self.next_pos[1]
+            self.pos[1] = self.next_pos[1]
 
-    def is_free(self, dx, dy):  # метод, который будет проверять клетку в которую мы пытаемся пойти,
+    def is_free(self, newrect):  # метод, который будет проверять клетку в которую мы пытаемся пойти,
         # если там препятствие - вернет False, иначе True
-        newrect = self.rect.move(dx, dy)
         if newrect.collidelist(current_mode.levels[current_mode.current_level].not_free_rects) != -1:
             return False
         return True
