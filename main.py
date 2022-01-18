@@ -523,7 +523,7 @@ class Level:
         self.map = pytmx.load_pygame(map_path)
         self.width = self.map.width
         self.height = self.map.height
-        self.tile_size = self.map.tilewidth
+        self.tile_size = round(size[0] / 41), round(size[1] / 32)
         self.enemies_list = enemies_list
         self.not_free_tiles = not_free_tiles
         self.not_free_rects, self.map_arr = self.generate_rects_and_map_array()
@@ -532,10 +532,10 @@ class Level:
 
     def get_left_top_pixel_of_cell(self, pixel_pos):
         x, y = pixel_pos
-        if x not in range(0, self.width * self.tile_size) \
-                or y not in range(0, self.height * self.tile_size):
+        if x not in range(0, self.width * self.tile_size[0]) \
+                or y not in range(0, self.height * self.tile_size[1]):
             return None
-        return x // self.tile_size * self.tile_size, y // self.tile_size * self.tile_size
+        return x // self.tile_size[0] * self.tile_size[0], y // self.tile_size[1] * self.tile_size[1]
 
     def get_cell(self, pos):
         x, y = pos
