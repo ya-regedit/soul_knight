@@ -97,6 +97,7 @@ def start_screen():
 
             manager.process_events(event)
         manager.update(time_delta)
+        screen.fill((0, 0, 0))
         screen.blit(pygame.transform.scale(load_image('background.png'), (w, h)), (0, 0))
         if mode == 0 and show_stars:
             with open('scores/levels_score.txt', 'r') as file:
@@ -188,8 +189,10 @@ def endgame_screen():
                 manager.process_events(event)
             manager.update(time_delta)
             if victory:
+                screen.fill((0, 0, 0))
                 screen.blit(pygame.transform.scale(load_image('win_screen.png'), (w, h)), (0, 0))
             else:
+                screen.fill((0, 0, 0))
                 screen.blit(pygame.transform.scale(load_image('gameover_screen.jpg'), (w, h)), (0, 0))
             manager.draw_ui(screen)
             pygame.display.flip()
@@ -318,11 +321,11 @@ class Knight(pygame.sprite.Sprite):
         self.next_pos = round(self.pos[0] + self.dx), round(self.pos[1] + self.dy)
         newrect = pygame.Rect(self.next_pos[0], self.rect.y, self.rect.w, self.rect.h)
         if self.is_free(newrect):
-            self.rect.x = self.next_pos[0]
+            self.rect = self.rect.move((self.next_pos[0] - self.rect.x), 0)
             self.pos[0] = self.next_pos[0]
         newrect = pygame.Rect(self.rect.x, self.next_pos[1], self.rect.w, self.rect.h)
         if self.is_free(newrect):
-            self.rect.y = self.next_pos[1]
+            self.rect = self.rect.move(0, (self.next_pos[1] - self.rect.y))
             self.pos[1] = self.next_pos[1]
 
     def is_free(self, newrect):  # метод, который будет проверять клетку в которую мы пытаемся пойти,
@@ -604,6 +607,7 @@ class Level:
         self.enemies = e
 
     def render(self):
+        screen.fill((0, 0, 0))
         for x in range(self.width):
             for y in range(self.height):
                 image = self.map.get_tile_image(x, y, 0)
@@ -821,7 +825,7 @@ class Shotgun(pygame.sprite.Sprite):
 
             if mouse_pos[0] > center_coords[0]:  # если курсор правее персонажа
                 if knight_main.direction_of_vision['Left']:
-                    self.rect.x += 40
+                    self.rect.x += round(size[0] / 30.75)
                 if knight_main.dx == 0 and knight_main.dy == 0:  # если персонаж стоит на месте
                     knight_main.image = knight_main.normal_static_frames[knight_main.cur_frame]
                 else:
@@ -835,7 +839,7 @@ class Shotgun(pygame.sprite.Sprite):
 
             else:
                 if knight_main.direction_of_vision['Right']:
-                    self.rect.x -= 40
+                    self.rect.x -= round(size[0] / 30.75)
                 if knight_main.dx == 0 and knight_main.dy == 0:
                     knight_main.image = knight_main.reversed_static_frames[knight_main.cur_frame]
                 else:
@@ -1077,7 +1081,9 @@ if __name__ == '__main__':
         running = True
         time_delta = clock.tick(fps) / 1000.0
         if mode == 0:
-            knight_main = Knight((50, 50), MAX_HP, load_image('knight.png'), 0)  # выбор оружия выполняется здесь
+            tile_size = round(size[0] / 41), round(size[1] / 32)
+            knight_main = Knight((tile_size[0] * 2, tile_size[1] * 2), MAX_HP, load_image('knight.png'),
+                                 0)  # выбор оружия выполняется здесь
             current_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
             # нажатии на экране кнопки "Режим уровней"
             current_mode.levels = [Level('maps/Level1.tmx', [((19, 4), 0), ((5, 14), 0), ((28, 19), 1)], [21]),
@@ -1096,12 +1102,12 @@ if __name__ == '__main__':
                                    Level('maps/Level9.tmx', [((28, 6), 1), ((34, 10), 0), ((10, 25), 1),
                                                              ((6, 21), 0), ((25, 15), 1), ((26, 20), 0)], [13, 14])]
 
-            tile_size = round(size[0] / 41), round(size[1] / 32)
             current_mode.levels[current_level].spawn_enemies(tile_size)
             for e in current_mode.levels[current_level].enemies:
                 e.show_gun(e.gun_id)
         else:
-            knight_main = Knight((50, 50), MAX_HP, load_image('knight.png'), 1)
+            tile_size = round(size[0] / 41), round(size[1] / 32)
+            knight_main = Knight((tile_size[0] * 2, tile_size[1] * 2), MAX_HP, load_image('knight.png'), 1)
             current_mode = HardcoreMode(knight_main)
             current_mode.next_level()
             current_mode.levels = [Level('maps/Hardcore_room1.tmx', [((11, 20), 1), ((21, 10), 1),
@@ -1136,7 +1142,7 @@ if __name__ == '__main__':
                                    Level('maps/Hardcore_room10.tmx', [((34, 15), 1),
                                                                       ((7, 15), 1), ((30, 5), 1),
                                                                       ((6, 5), 1), ((5, 28), 1)], [13])]
-            tile_size = round(size[0] / 41), round(size[1] / 32)
+
             current_mode.levels[current_level].spawn_enemies(tile_size)
             for e in current_mode.levels[current_level].enemies:
                 e.show_gun(e.gun_id)
