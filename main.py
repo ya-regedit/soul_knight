@@ -217,7 +217,7 @@ class Knight(pygame.sprite.Sprite):
         self.v = 2 * size[0] / 1230, 2 * size[1] / 960
 
         self.pos = [*pos]
-        self.next_pos = pos
+        self.next_pos = self.pos
         self.hp = hp
         self.effect = None
         self.effect_end = 0
@@ -318,15 +318,19 @@ class Knight(pygame.sprite.Sprite):
             self.hp_bar.render(screen)
 
     def move(self):
-        self.next_pos = round(self.pos[0] + self.dx), round(self.pos[1] + self.dy)
+        self.next_pos = [self.next_pos[0] + self.dx, self.next_pos[1] + self.dy]
         newrect = pygame.Rect(self.next_pos[0], self.rect.y, self.rect.w, self.rect.h)
         if self.is_free(newrect):
-            self.rect = self.rect.move((self.next_pos[0] - self.rect.x), 0)
-            self.pos[0] = self.next_pos[0]
+            self.rect = self.rect.move(round(self.next_pos[0] - self.rect.x), 0)
+            self.pos[0] = round(self.next_pos[0])
+        else:
+            self.next_pos[0] -= self.dx
         newrect = pygame.Rect(self.rect.x, self.next_pos[1], self.rect.w, self.rect.h)
         if self.is_free(newrect):
-            self.rect = self.rect.move(0, (self.next_pos[1] - self.rect.y))
-            self.pos[1] = self.next_pos[1]
+            self.rect = self.rect.move(0, round(self.next_pos[1] - self.rect.y))
+            self.pos[1] = round(self.next_pos[1])
+        else:
+            self.next_pos[1] -= self.dy
 
     def is_free(self, newrect):  # метод, который будет проверять клетку в которую мы пытаемся пойти,
         # если там препятствие - вернет False, иначе True
