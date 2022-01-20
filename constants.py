@@ -1,5 +1,5 @@
-size = w, h = 1920, 1080
-fullscreen = True # не доделано
+size = w, h = 1230, 960
+fullscreen = True
 running = True
 fps = 100
 ticks = 0

@@ -15,7 +15,10 @@ from UI import manager, show_level_btns, hide_level_btns, show_main_btns, hide_m
     level_mode_btn, hardcore_mode_btn, exit_button1, back_btn, level_btns, esc_window, reset_btn
 
 pygame.init()
-screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
+if fullscreen:
+    screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
+else:
+    screen = pygame.display.set_mode(size)
 screen_rect = pygame.Rect(0, 0, *size)
 pygame.display.set_caption('Soul Knight')
 clock = pygame.time.Clock()
@@ -1083,7 +1086,7 @@ if __name__ == '__main__':
         bullets = pygame.sprite.Group()
         particles = pygame.sprite.Group()
         damage_zones = pygame.sprite.Group()
-        fullscreen = True
+        # fullscreen = True
         running = True
         time_delta = clock.tick(fps) / 1000.0
         if mode == 0:
