@@ -674,7 +674,7 @@ class Gun(pygame.sprite.Sprite):
 
             if mouse_pos[0] > center_coords[0]:  # если курсор правее персонажа
                 if knight_main.direction_of_vision['Left']:
-                    self.rect.x += round(knight_main.image.get_width()/1.375)
+                    self.rect.x += round(knight_main.image.get_width() / 1.375)
                 if knight_main.dx == 0 and knight_main.dy == 0:  # если персонаж стоит на месте
                     knight_main.image = knight_main.normal_static_frames[knight_main.cur_frame]
                 else:
@@ -696,7 +696,7 @@ class Gun(pygame.sprite.Sprite):
                 self.image = pygame.transform.flip(self.image, True, False)
                 self.last_image = self.image
                 if knight_main.direction_of_vision['Right']:
-                    self.rect.x -= round(knight_main.image.get_width()/1.375)
+                    self.rect.x -= round(knight_main.image.get_width() / 1.375)
                 knight_main.direction_of_vision['Right'], \
                 knight_main.direction_of_vision['Left'] = False, True
 
@@ -706,7 +706,7 @@ class Gun(pygame.sprite.Sprite):
             else:
                 self.image = pygame.transform.flip(self.source_img, True, False)
                 if knight_main.direction_of_vision['Right']:
-                    self.rect.x -= round(knight_main.image.get_width()/1.375)
+                    self.rect.x -= round(knight_main.image.get_width() / 1.375)
         screen.blit(self.image, self.rect)
 
     def enemy_render(self, rect: pygame.Rect, ticks):
@@ -1086,7 +1086,6 @@ if __name__ == '__main__':
         bullets = pygame.sprite.Group()
         particles = pygame.sprite.Group()
         damage_zones = pygame.sprite.Group()
-        # fullscreen = True
         running = True
         time_delta = clock.tick(fps) / 1000.0
         if mode == 0:
@@ -1173,11 +1172,17 @@ if __name__ == '__main__':
                     if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                         if not esc_win_showed:
                             esc_window = pygame_gui.windows.ui_confirmation_dialog.UIConfirmationDialog(
-                                pygame.Rect(215, 280, 800, 400),
-                                manager, action_long_desc='Вернуться в главное меню?',
+                                pygame.Rect(round((size[0] / 2) - (round(size[0] / 3.075) / 2)),
+                                            round((size[1] / 2) - (round(size[1] / 2.4) / 2)),
+                                            round(size[0] / 3.075),
+                                            round(size[1] / 2.4)),
+                                manager,
+                                action_long_desc='Вернуться в '
+                                                 'главное меню?',
                                 window_title='Выход в меню',
                                 action_short_name='Выйти',
                                 visible=False)
+
                             esc_window.show()
                             esc_win_showed = True
                         else:
