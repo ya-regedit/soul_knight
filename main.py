@@ -667,7 +667,7 @@ class Gun(pygame.sprite.Sprite):
 
             if mouse_pos[0] > center_coords[0]:  # если курсор правее персонажа
                 if knight_main.direction_of_vision['Left']:
-                    self.rect.x += 40
+                    self.rect.x += round(knight_main.image.get_width()/1.375)
                 if knight_main.dx == 0 and knight_main.dy == 0:  # если персонаж стоит на месте
                     knight_main.image = knight_main.normal_static_frames[knight_main.cur_frame]
                 else:
@@ -689,7 +689,7 @@ class Gun(pygame.sprite.Sprite):
                 self.image = pygame.transform.flip(self.image, True, False)
                 self.last_image = self.image
                 if knight_main.direction_of_vision['Right']:
-                    self.rect.x -= 40
+                    self.rect.x -= round(knight_main.image.get_width()/1.375)
                 knight_main.direction_of_vision['Right'], \
                 knight_main.direction_of_vision['Left'] = False, True
 
@@ -699,7 +699,7 @@ class Gun(pygame.sprite.Sprite):
             else:
                 self.image = pygame.transform.flip(self.source_img, True, False)
                 if knight_main.direction_of_vision['Right']:
-                    self.rect.x -= 40
+                    self.rect.x -= round(knight_main.image.get_width()/1.375)
         screen.blit(self.image, self.rect)
 
     def enemy_render(self, rect: pygame.Rect, ticks):
@@ -734,7 +734,8 @@ class Gun(pygame.sprite.Sprite):
 
         bullet = Bullet(right, top, self.v_bullets, self.adjacent_cathet, self.opposite_cathet, self.owner, self.damage)
 
-        normal_img = load_image(db_bullets[self.id_bullets])
+        normal_img = pygame.transform.scale(load_image(db_bullets[self.id_bullets]),
+                                            (round(size[0] / 55.909), round(size[1] / 73.84615)))
         reversed_img = pygame.transform.flip(normal_img, True, False)
 
         bullet.image = normal_img
@@ -757,7 +758,8 @@ class Gun(pygame.sprite.Sprite):
 
         bullet = Bullet(right, top, self.v_bullets, self.adjacent_cathet, self.opposite_cathet, self.owner, self.damage)
 
-        normal_img = load_image(db_bullets[self.id_bullets])
+        normal_img = pygame.transform.scale(load_image(db_bullets[self.id_bullets]),
+                                            (round(size[0] / 55.909), round(size[1] / 73.84615)))
         reversed_img = pygame.transform.flip(normal_img, True, False)
 
         bullet.image = normal_img
