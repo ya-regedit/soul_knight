@@ -383,7 +383,7 @@ class Knight(pygame.sprite.Sprite):
             # у дробовика размеры, сдвиг, владелец, урон, радиус
             Shotgun(pygame.transform.scale(load_image('hammer.jpg', -1),
                                            (round(size[0] / 24.6), round(size[1] / 32))),
-                    (round(size[0] / 123), round(size[1] / 192)), self, 10, 100)]
+                    (round(size[0] / 123), round(size[1] / 192)), self, 10, 100/1230*size[0])]
         self.gun = self.guns[gun_id]
 
 
@@ -427,7 +427,7 @@ class Enemy(pygame.sprite.Sprite):
             # у дробовика размеры, сдвиг, владелец, урон, радиус
             Shotgun(pygame.transform.scale(load_image('hammer.jpg', -1),
                                            (round(size[0] / 35.143), round(size[1] / 38.4))),
-                    (round(size[0] / 61.5), -round(size[1] / 192)), self, 60, 100)]
+                    (round(size[0] / 61.5), -round(size[1] / 192)), self, 60, 100/1230*size[0])]
         self.gun = self.guns[gun_id]
 
     def shoot(self, ticks):
