@@ -228,7 +228,7 @@ class Knight(pygame.sprite.Sprite):
         self.direction_of_vision = {'Right': True, 'Left': False}
 
         self.sheet = sheet
-        self.sheet = pygame.transform.scale(self.sheet, (round(size[0] / 5.125), round(size[1] / 4)))
+        self.sheet = pygame.transform.scale(self.sheet, (round(size[0] / 5.125) // 4 * 4, round(size[1] / 4) // 4 * 4))
         self.rect = pygame.Rect(self.pos[0], self.pos[1], self.sheet.get_width() // 4 - 5,
                                 self.sheet.get_height() // 4 - 5)
 
@@ -322,13 +322,15 @@ class Knight(pygame.sprite.Sprite):
 
     def move(self):
         self.next_pos = [self.next_pos[0] + self.dx, self.next_pos[1] + self.dy]
-        newrect = pygame.Rect(self.next_pos[0], self.rect.y, self.rect.w, self.rect.h)
+        newrect = pygame.Rect(round(self.next_pos[0] - self.rect.x) + self.rect.x, self.rect.y, self.rect.w,
+                              self.rect.h)
         if self.is_free(newrect):
             self.rect = self.rect.move(round(self.next_pos[0] - self.rect.x), 0)
             self.pos[0] = round(self.next_pos[0])
         else:
             self.next_pos[0] -= self.dx
-        newrect = pygame.Rect(self.rect.x, self.next_pos[1], self.rect.w, self.rect.h)
+        newrect = pygame.Rect(self.rect.x, round(self.next_pos[1] - self.rect.y) + self.rect.y, self.rect.w,
+                              self.rect.h)
         if self.is_free(newrect):
             self.rect = self.rect.move(0, round(self.next_pos[1] - self.rect.y))
             self.pos[1] = round(self.next_pos[1])
@@ -519,15 +521,13 @@ class Enemy(pygame.sprite.Sprite):
 
 
 class EnemyShotguner(Enemy):
-    def __init__(self, pos: tuple, hp, image, field, gun_id):
+    def __init__(self, pos: tuple, hp, image, gun_id):
         super(EnemyShotguner, self).__init__(pos, hp, image, gun_id)
-        self.field = field
 
 
 class EnemyRifler(Enemy):
-    def __init__(self, pos: tuple, hp, image, field, gun_id):
+    def __init__(self, pos: tuple, hp, image, gun_id):
         super(EnemyRifler, self).__init__(pos, hp, image, gun_id)
-        self.field = field
 
 
 class Level:
@@ -607,9 +607,9 @@ class Level:
             pos = tile_size[0] * enemy[0][0], tile_size[1] * enemy[0][1]
             if 0 <= enemy[0][0] < self.map.width and 0 <= enemy[0][1] < self.map.height:
                 if enemy[1] == 1:
-                    e.append(EnemyRifler(pos, 10, image1, 'тут будет передача поля', 0))
+                    e.append(EnemyRifler(pos, 10, image1, 0))
                 if enemy[1] == 0:
-                    e.append(EnemyShotguner(pos, 10, image2, 'тут будет передача поля', 1))
+                    e.append(EnemyShotguner(pos, 10, image2, 1))
                 self.enemies_sprites.add(e[-1])
         self.enemies = e
 
@@ -1082,7 +1082,7 @@ start_screen()
 if __name__ == '__main__':
     while not do_exit:
         all_sprites = pygame.sprite.Group()
-        enemies = pygame.sprite.Group()  # это пока будет тут, потом пойдет в класс режима игры
+        enemies = pygame.sprite.Group()
         bullets = pygame.sprite.Group()
         particles = pygame.sprite.Group()
         damage_zones = pygame.sprite.Group()
@@ -1092,8 +1092,7 @@ if __name__ == '__main__':
             tile_size = round(size[0] / 41), round(size[1] / 32)
             knight_main = Knight((tile_size[0] * 2, tile_size[1] * 2), MAX_HP, load_image('knight.png'),
                                  0)  # выбор оружия выполняется здесь
-            current_mode = ModeWithLevels(knight_main, current_level)  # в дальнейшем это будет вызываться при
-            # нажатии на экране кнопки "Режим уровней"
+            current_mode = ModeWithLevels(knight_main, current_level)
             current_mode.levels = [Level('maps/Level1.tmx', [((19, 4), 0), ((5, 14), 0), ((28, 19), 1)], [21]),
                                    Level('maps/Level2.tmx', [((13, 19), 0), ((27, 12), 0), ((5, 20), 1)], [21]),
                                    Level('maps/Level3.tmx', [((10, 14), 0), ((18, 10), 0), ((30, 12), 1)], [21]),
