@@ -578,16 +578,16 @@ class Level:
     def spawn_enemies(self, tile_size):
         e = []
         if current_level in (0, 1, 2):
-            image1 = load_image('snow_enemy1.png')
-            image2 = load_image('snow_enemy2.png')
+            image1 = pygame.transform.scale(load_image('snow_enemy1.png'), (min(tile_size), (min(tile_size))))
+            image2 = pygame.transform.scale(load_image('snow_enemy2.png'), (min(tile_size), (min(tile_size))))
         elif current_level in (3, 4, 5):
-            image1 = load_image('desert_enemy1.png')
-            image2 = load_image('desert_enemy2.png')
+            image1 = pygame.transform.scale(load_image('desert_enemy1.png'), (min(tile_size), (min(tile_size))))
+            image2 = pygame.transform.scale(load_image('desert_enemy2.png'), (min(tile_size), (min(tile_size))))
         elif current_level in (6, 7, 8):
-            image1 = load_image('alien_enemy1.png')
-            image2 = load_image('alien_enemy2.png')
+            image1 = pygame.transform.scale(load_image('alien_enemy1.png'), (min(tile_size), (min(tile_size))))
+            image2 = pygame.transform.scale(load_image('alien_enemy2.png'), (min(tile_size), (min(tile_size))))
         else:
-            image1 = image2 = load_image('lava_enemy.png')
+            image1 = image2 = pygame.transform.scale(load_image('lava_enemy.png'), (min(tile_size), (min(tile_size))))
         if image1.get_width() < image1.get_height():
             k = tile_size[1] / image1.get_height()
             image1 = pygame.transform.scale(image1, (round(k * image1.get_width()), tile_size[1]))
