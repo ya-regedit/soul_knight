@@ -1015,7 +1015,7 @@ class Particle(pygame.sprite.Sprite):
 class DamageZone(pygame.sprite.Sprite):
     def __init__(self, pos, radius, tick, lifetime):
         super().__init__()
-        self.image = pygame.transform.scale(load_image('hammer_shot.png', -1), (radius, radius))
+        self.image = pygame.transform.scale(load_image('hammer_shot.png', -1), (round(radius), round(radius)))
         self.rect = pygame.rect.Rect(pos[0] - radius // 2, pos[1] - radius // 2, radius, radius)
         self.spawn_tick = tick
         self.death_tick = tick + lifetime
